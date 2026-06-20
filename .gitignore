@@ -1,0 +1,31 @@
+
+!.vscode/extensions.json
+# Editor directories and files
+# Env files (keep .env.example)
+# Logs
+# Supabase
+# Vercel
+*.local
+*.log
+*.njsproj
+*.ntvs*
+*.sln
+*.suo
+*.sw?
+.DS_Store
+.env
+.env.*.local
+.env.local
+.idea
+.vercel
+.vscode/*
+dist
+dist-ssr
+lerna-debug.log*
+logs
+node_modules
+npm-debug.log*
+pnpm-debug.log*
+supabase/.temp
+yarn-debug.log*
+yarn-error.log*

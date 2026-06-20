@@ -1,0 +1,186 @@
+import { supabase } from "@/integrations/supabase/client";
+import type {
+  Person,
+  Union,
+  Tree,
+  Media,
+  TreeStats,
+  ShareLink,
+  AuditEntry,
+} from "@/integrations/supabase/types";
+
+// ---------------------- Árvores ----------------------
+export async function listMyTrees(): Promise<Tree[]> {
+  const { data, error } = await supabase
+    .from("genea_trees")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data as Tree[]) ?? [];
+}
+
+export async function createTree(name: string, description?: string): Promise<Tree> {
+  const { data, error } = await supabase.rpc("genea_create_tree", {
+    p_name: name,
+    p_description: description ?? null,
+  });
+  if (error) throw error;
+  return data as Tree;
+}
+
+export async function getTreeStats(treeId: string): Promise<TreeStats | null> {
+  const { data, error } = await supabase.rpc("genea_tree_stats", {
+    p_tree: treeId,
+  });
+  if (error) throw error;
+  return data as TreeStats | null;
+}
+
+// ---------------------- Pessoas ----------------------
+export async function listPeople(treeId: string): Promise<Person[]> {
+  const { data, error } = await supabase
+    .from("genea_people")
+    .select("*")
+    .eq("tree_id", treeId)
+    .order("first_name", { ascending: true });
+  if (error) throw error;
+  return (data as Person[]) ?? [];
+}
+
+export async function getPerson(id: string): Promise<Person | null> {
+  const { data, error } = await supabase
+    .from("genea_people")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as Person) ?? null;
+}
+
+export type PersonInput = Partial<Person> & { tree_id: string; first_name: string };
+
+export async function upsertPerson(input: PersonInput): Promise<Person> {
+  const payload = { ...input };
+  const { data, error } = await supabase
+    .from("genea_people")
+    .upsert(payload)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Person;
+}
+
+export async function deletePerson(id: string): Promise<void> {
+  const { error } = await supabase.from("genea_people").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ---------------------- Uniões ----------------------
+export async function listUnions(treeId: string): Promise<Union[]> {
+  const { data, error } = await supabase
+    .from("genea_unions")
+    .select("*")
+    .eq("tree_id", treeId);
+  if (error) throw error;
+  return (data as Union[]) ?? [];
+}
+
+export async function addUnion(
+  treeId: string,
+  partner1Id: string,
+  partner2Id: string,
+  kind = "marriage"
+): Promise<Union> {
+  const { data, error } = await supabase
+    .from("genea_unions")
+    .insert({
+      tree_id: treeId,
+      partner1_id: partner1Id,
+      partner2_id: partner2Id,
+      kind,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Union;
+}
+
+export async function deleteUnion(id: string): Promise<void> {
+  const { error } = await supabase.from("genea_unions").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ---------------------- Mídia ----------------------
+export async function listMedia(personId: string): Promise<Media[]> {
+  const { data, error } = await supabase
+    .from("genea_media")
+    .select("*")
+    .eq("person_id", personId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as Media[]) ?? [];
+}
+
+export async function addMediaRecord(m: Partial<Media>): Promise<Media> {
+  const { data, error } = await supabase
+    .from("genea_media")
+    .insert(m)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Media;
+}
+
+// ---------------------- Compartilhamento ----------------------
+export async function createShareLink(
+  treeId: string,
+  expiresAt?: string | null
+): Promise<ShareLink> {
+  const { data, error } = await supabase
+    .from("genea_share_links")
+    .insert({ tree_id: treeId, expires_at: expiresAt ?? null })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as ShareLink;
+}
+
+export async function listShareLinks(treeId: string): Promise<ShareLink[]> {
+  const { data, error } = await supabase
+    .from("genea_share_links")
+    .select("*")
+    .eq("tree_id", treeId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as ShareLink[]) ?? [];
+}
+
+export async function revokeShareLink(token: string): Promise<void> {
+  const { error } = await supabase
+    .from("genea_share_links")
+    .update({ revoked: true })
+    .eq("token", token);
+  if (error) throw error;
+}
+
+export async function fetchSharedTree(
+  token: string
+): Promise<{ tree: Tree; people: Person[]; unions: Union[] } | null> {
+  const { data, error } = await supabase.rpc("genea_shared_tree", {
+    p_token: token,
+  });
+  if (error) throw error;
+  return data as { tree: Tree; people: Person[]; unions: Union[] } | null;
+}
+
+// ---------------------- Auditoria ----------------------
+export async function listAudit(treeId: string, limit = 100): Promise<AuditEntry[]> {
+  const { data, error } = await supabase
+    .from("genea_audit_log")
+    .select("*")
+    .eq("tree_id", treeId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data as AuditEntry[]) ?? [];
+}
