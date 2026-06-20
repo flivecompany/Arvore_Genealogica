@@ -1,0 +1,68 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "next-themes";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { TreeProvider } from "./hooks/useTree";
+import { AppShell } from "./components/AppShell";
+
+import Landing from "./pages/Landing";
+import Auth from "./pages/Auth";
+import TreeView from "./pages/TreeView";
+import People from "./pages/People";
+import Dashboard from "./pages/Dashboard";
+import Admin from "./pages/Admin";
+import Shared from "./pages/Shared";
+import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
+
+function RequireAuth() {
+  const { user, isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-muted-foreground">Carregando...</div>
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/auth" replace />;
+  return (
+    <TreeProvider>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+    </TreeProvider>
+  );
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/compartilhar/:token" element={<Shared />} />
+              <Route element={<RequireAuth />}>
+                <Route path="/arvore" element={<TreeView />} />
+                <Route path="/pessoas" element={<People />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/admin" element={<Admin />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
+);
+
+export default App;

@@ -1,0 +1,9 @@
+# Árvore Genealógica — módulo do ecossistema "Controle Flive".
+# Recomenda-se usar o mesmo projeto Supabase do Controle Flive e aplicar
+# as migrations deste módulo (prefixo `genea_`), que NÃO conflitam com as
+# tabelas do sistema principal.
+#
+# Aplicar o schema:
+#   supabase db push           (CLI, ambiente local/linkado)
+#   ou cole supabase/migrations/0001_init.sql no SQL Editor do projeto.
+project_id = "arvore-genealogica-flive"

@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   ÁRVORE GENEALÓGICA — FLIVE COMPANY
+   Tema CLARO por padrão (boa legibilidade) + modo escuro (.dark).
+   Marca: Azul #1498d5 (primária) · Laranja #fd4817 (destaque).
+   ============================================================ */
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Primary - Flive Blue (#1498d5) */
+    --primary: 199 83% 46%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 30% 94%;
+    --secondary-foreground: 222 40% 16%;
+
+    --muted: 210 30% 94%;
+    --muted-foreground: 215 16% 42%;
+
+    /* Accent - Flive Orange (#fd4817) */
+    --accent: 13 96% 54%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 5%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 25% 88%;
+    --input: 214 25% 88%;
+    --ring: 199 83% 46%;
+
+    --radius: 0.75rem;
+
+    /* Sexo (ícones / bordas de cartão) */
+    --male: 199 83% 46%;
+    --female: 13 96% 54%;
+
+    --gradient-flive: linear-gradient(135deg, hsl(199 83% 46%) 0%, hsl(13 96% 54%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(210 40% 98%) 0%, hsl(210 36% 95%) 100%);
+
+    --shadow-flive: 0 10px 40px -12px hsl(199 83% 46% / 0.35);
+    --shadow-card: 0 2px 14px -4px hsl(222 47% 20% / 0.18);
+  }
+
+  .dark {
+    --background: 222 38% 8%;
+    --foreground: 0 0% 98%;
+
+    --card: 222 33% 12%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 222 33% 12%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 199 83% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 24% 18%;
+    --secondary-foreground: 0 0% 96%;
+
+    --muted: 222 24% 18%;
+    --muted-foreground: 215 16% 65%;
+
+    --accent: 13 96% 56%;
+    --accent-foreground: 0 0% 100%;
+
+    --border: 222 20% 22%;
+    --input: 222 20% 22%;
+    --ring: 199 83% 52%;
+
+    --male: 199 83% 60%;
+    --female: 13 96% 62%;
+
+    --gradient-subtle: linear-gradient(180deg, hsl(222 38% 8%) 0%, hsl(222 33% 12%) 100%);
+    --shadow-card: 0 2px 14px -4px hsl(222 60% 2% / 0.6);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* ====== family-chart (organograma) ====== */
+.f3 {
+  width: 100%;
+  height: 100%;
+}
+.f3 svg.main_svg {
+  background: transparent;
+  width: 100%;
+  height: 100%;
+}
+.f3 .card_cont { cursor: pointer; }
+.f3 .link { fill: none; stroke: hsl(var(--border)); stroke-width: 1.5px; }
+
+/* Cartões (estilo imageRect) tematizados com a marca Flive */
+.f3 .card-inner {
+  border-radius: 0.75rem !important;
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground)) !important;
+  box-shadow: var(--shadow-card);
+  border: 2px solid hsl(var(--border));
+  transition: all 0.2s ease;
+}
+.f3 .card-male .card-inner { border-color: hsl(var(--male)); }
+.f3 .card-female .card-inner { border-color: hsl(var(--female)); }
+.f3 .card_male rect.card-inner { stroke: hsl(var(--male)); }
+.f3 .card_female rect.card-inner { stroke: hsl(var(--female)); }
+.f3 .card-image { border-radius: 9999px !important; }
+.f3 rect.card-image { rx: 28; }
+
+/* Destaque de busca / ancestrais / descendentes */
+.genea-glow .card-inner,
+.f3 .genea-glow .card-inner {
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.55), var(--shadow-flive);
+  border-color: hsl(var(--primary)) !important;
+}
+.genea-dim { opacity: 0.35; transition: opacity 0.2s ease; }
