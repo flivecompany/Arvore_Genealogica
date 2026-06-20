@@ -186,7 +186,7 @@ $$;
 
 -- updated_at automático
 create or replace function genea_touch_updated_at()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = public as $$
 begin new.updated_at = now(); return new; end;
 $$;
 

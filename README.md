@@ -74,18 +74,21 @@ VITE_SUPABASE_PUBLISHABLE_KEY="<anon/publishable key>"
 
 ## Banco de dados (Supabase)
 
-O schema deste módulo está em [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql).
-Aplique no projeto Supabase (recomendado: o mesmo do Controle Flive):
+O schema deste módulo está em
+[`supabase/migrations/`](supabase/migrations/) (`0001_init.sql` + `0002_harden_security.sql`).
+Já aplicado no projeto Supabase **`Projetos_claude`** (ref `gkwynykxejjjabpfpflt`).
+Para reaplicar em outro projeto:
 
 ```bash
 # via CLI (projeto linkado)
 supabase db push
-# ou cole o conteúdo do .sql no SQL Editor do projeto
+# ou cole o conteúdo dos .sql no SQL Editor do projeto, na ordem
 ```
 
-O script cria as tabelas `genea_*`, políticas **RLS**, **triggers de auditoria**,
+`0001` cria as tabelas `genea_*`, políticas **RLS**, **triggers de auditoria**,
 funções (criação de árvore, estatísticas, leitura pública por token) e o bucket de
-**storage** privado `genea-media` para fotos e documentos.
+**storage** privado `genea-media`. `0002` faz a **blindagem de privilégios** das
+funções (recomendada pelos advisors do Supabase).
 
 ### Segurança
 
