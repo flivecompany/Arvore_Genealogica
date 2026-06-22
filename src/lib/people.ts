@@ -78,6 +78,20 @@ export async function deletePerson(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Define pai ou mãe de uma pessoa (usado ao adicionar parentes pela árvore). */
+export async function setPersonParent(
+  childId: string,
+  which: "father" | "mother",
+  parentId: string | null
+): Promise<void> {
+  const col = which === "father" ? "father_id" : "mother_id";
+  const { error } = await supabase
+    .from("genea_people")
+    .update({ [col]: parentId })
+    .eq("id", childId);
+  if (error) throw error;
+}
+
 // ---------------------- Uniões ----------------------
 export async function listUnions(treeId: string): Promise<Union[]> {
   const { data, error } = await supabase
