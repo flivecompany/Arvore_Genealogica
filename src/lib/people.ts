@@ -136,9 +136,12 @@ export async function createShareLink(
   treeId: string,
   expiresAt?: string | null
 ): Promise<ShareLink> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("genea_share_links")
-    .insert({ tree_id: treeId, expires_at: expiresAt ?? null })
+    .insert({ tree_id: treeId, created_by: user?.id, expires_at: expiresAt ?? null })
     .select()
     .single();
   if (error) throw error;
