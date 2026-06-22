@@ -171,12 +171,8 @@ export function descendantsOf(id: string, people: Person[]): Set<string> {
   return out;
 }
 
-/**
- * Escolhe a melhor pessoa para ser a raiz visual do organograma: o ancestral
- * do topo (sem pais) do MAIOR grupo conectado, com mais descendentes.
- */
-export function pickRootId(people: Person[], unions: Union[]): string | null {
-  if (people.length === 0) return null;
+// Adjacência não-direcionada (pais/filhos + cônjuges)
+function buildAdjacency(people: Person[], unions: Union[]): Map<string, Set<string>> {
   const byId = new Set(people.map((p) => p.id));
   const adj = new Map<string, Set<string>>();
   const link = (a: string, b: string) => {
@@ -197,9 +193,40 @@ export function pickRootId(people: Person[], unions: Union[]): string | null {
       link(u.partner2_id, u.partner1_id);
     }
   }
+  return adj;
+}
 
+function componentRoot(ids: string[], people: Person[]): string {
+  const peopleById = new Map(people.map((p) => [p.id, p]));
+  const idSet = new Set(ids);
+  const roots = ids.filter((id) => {
+    const p = peopleById.get(id);
+    return p && !p.father_id && !p.mother_id;
+  });
+  const pool = roots.length ? roots : ids;
+  let bestId = pool[0];
+  let bestCount = -1;
+  for (const id of pool) {
+    const c = [...descendantsOf(id, people)].filter((d) => idSet.has(d)).length;
+    if (c > bestCount) {
+      bestCount = c;
+      bestId = id;
+    }
+  }
+  return bestId;
+}
+
+export interface FamilyGroup {
+  rootId: string;
+  label: string;
+  size: number;
+}
+
+/** Lista os grupos familiares separados (componentes conectados), maior primeiro. */
+export function connectedGroups(people: Person[], unions: Union[]): FamilyGroup[] {
+  const adj = buildAdjacency(people, unions);
   const seen = new Set<string>();
-  let best: string[] = [];
+  const groups: FamilyGroup[] = [];
   for (const p of people) {
     if (seen.has(p.id)) continue;
     const comp: string[] = [];
@@ -211,26 +238,24 @@ export function pickRootId(people: Person[], unions: Union[]): string | null {
       comp.push(c);
       for (const n of adj.get(c) ?? []) if (!seen.has(n)) stack.push(n);
     }
-    if (comp.length > best.length) best = comp;
+    const rootId = componentRoot(comp, people);
+    const root = people.find((x) => x.id === rootId);
+    groups.push({
+      rootId,
+      label: root ? `Família de ${fullName(root)}` : "Grupo",
+      size: comp.length,
+    });
   }
+  return groups.sort((a, b) => b.size - a.size);
+}
 
-  const peopleById = new Map(people.map((p) => [p.id, p]));
-  const roots = best.filter((id) => {
-    const p = peopleById.get(id);
-    return p && !p.father_id && !p.mother_id;
-  });
-  const pool = roots.length ? roots : best;
-
-  let bestId = pool[0];
-  let bestCount = -1;
-  for (const id of pool) {
-    const c = descendantsOf(id, people).size;
-    if (c > bestCount) {
-      bestCount = c;
-      bestId = id;
-    }
-  }
-  return bestId;
+/**
+ * Escolhe a melhor pessoa para ser a raiz visual do organograma: o ancestral
+ * do topo (sem pais) do MAIOR grupo conectado, com mais descendentes.
+ */
+export function pickRootId(people: Person[], unions: Union[]): string | null {
+  if (people.length === 0) return null;
+  return connectedGroups(people, unions)[0]?.rootId ?? null;
 }
 
 // ---------------------------------------------------------------------------
