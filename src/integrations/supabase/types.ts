@@ -2,7 +2,7 @@
 //   supabase gen types typescript --project-id <REF> > src/integrations/supabase/types.ts
 
 export type Sex = "male" | "female" | "other";
-export type MemberRole = "admin" | "editor" | "viewer";
+export type MemberRole = "admin" | "editor" | "viewer" | "pending";
 export type MediaKind = "photo" | "document" | "other";
 
 export interface SocialLink {
@@ -63,6 +63,17 @@ export interface Member {
   tree_id: string;
   user_id: string;
   role: MemberRole;
+  email: string | null;
+  display_name: string | null;
+  created_at: string;
+}
+
+export interface InviteLink {
+  token: string;
+  tree_id: string;
+  created_by: string;
+  expires_at: string | null;
+  revoked: boolean;
   created_at: string;
 }
 

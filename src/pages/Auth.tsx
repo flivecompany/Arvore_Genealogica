@@ -16,6 +16,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [params] = useSearchParams();
+  const redirectTo = params.get("redirect") || "/arvore";
   const [mode, setMode] = useState<Mode>("signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -23,8 +24,8 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) navigate("/arvore", { replace: true });
-  }, [user, navigate]);
+    if (user) navigate(redirectTo, { replace: true });
+  }, [user, navigate, redirectTo]);
 
   useEffect(() => {
     if (params.get("mode") === "recovery") {
@@ -39,7 +40,7 @@ export default function Auth() {
       if (mode === "signin") {
         const { error } = await signIn(email, password);
         if (error) throw error;
-        navigate("/arvore");
+        navigate(redirectTo);
       } else if (mode === "signup") {
         const { error } = await signUp(email, password, name);
         if (error) throw error;
