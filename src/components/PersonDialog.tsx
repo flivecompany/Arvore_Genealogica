@@ -28,22 +28,33 @@ import {
 import { PersonAvatar } from "./PersonAvatar";
 import { SexIcon, sexLabel } from "./SexIcon";
 import { PersonForm } from "./PersonForm";
-import type { Person, Union } from "@/integrations/supabase/types";
+import type { Person, Union, UnionStatus } from "@/integrations/supabase/types";
 import {
   fullName,
   lifeSpan,
   formatDate,
   ageOf,
   kinship,
+  UNION_STATUS_LABEL,
+  isFormerUnion,
 } from "@/lib/genealogy";
 import {
   deletePerson,
   addUnion,
+  updateUnion,
   deleteUnion,
   addMediaRecord,
   listMedia,
   setPersonParent,
 } from "@/lib/people";
+
+const UNION_STATUS_OPTIONS: UnionStatus[] = [
+  "married",
+  "partners",
+  "separated",
+  "divorced",
+  "widowed",
+];
 
 type RelativeKind = "father" | "mother" | "spouse" | "child";
 const RELATIVE_LABEL: Record<RelativeKind, string> = {
@@ -308,7 +319,14 @@ export function PersonDialog({
 
             <TabsContent value="family" className="space-y-4 pt-2">
               <Relations title="Pais" people={[father, mother].filter(Boolean) as Person[]} onNavigate={onNavigate} />
-              <Relations title="Cônjuge(s)" people={spouses} onNavigate={onNavigate} />
+              <SpouseUnions
+                person={person}
+                people={people}
+                unions={unions}
+                canEdit={canEdit}
+                onNavigate={onNavigate}
+                onChanged={onChanged}
+              />
               <Relations title="Irmãos" people={siblings} onNavigate={onNavigate} />
               <Relations title="Filhos" people={children} onNavigate={onNavigate} />
               {canEdit && (
@@ -387,34 +405,45 @@ function Relations({
   );
 }
 
-function AddSpouse({
+/** Lista os cônjuges/uniões de uma pessoa, mostrando a situação (casado,
+ *  divorciado, separado, viúvo…) e permitindo alterá-la ou remover o vínculo. */
+function SpouseUnions({
   person,
   people,
-  treeId,
   unions,
+  canEdit,
+  onNavigate,
   onChanged,
 }: {
   person: Person;
   people: Person[];
-  treeId: string;
   unions: Union[];
+  canEdit: boolean;
+  onNavigate?: (id: string) => void;
   onChanged: () => void;
 }) {
   const { toast } = useToast();
-  const [value, setValue] = useState<string>("");
-  const existing = new Set(
-    unions
-      .filter((u) => u.partner1_id === person.id || u.partner2_id === person.id)
-      .flatMap((u) => [u.partner1_id, u.partner2_id])
+  const byId = new Map(people.map((p) => [p.id, p]));
+  const mine = unions.filter(
+    (u) => u.partner1_id === person.id || u.partner2_id === person.id
   );
-  const options = people.filter((p) => p.id !== person.id && !existing.has(p.id));
+  if (mine.length === 0) return null;
 
-  async function add() {
-    if (!value) return;
+  async function changeStatus(u: Union, status: UnionStatus) {
     try {
-      await addUnion(treeId, person.id, value);
-      toast({ title: "Cônjuge vinculado." });
-      setValue("");
+      await updateUnion(u.id, { status });
+      toast({ title: `Situação atualizada para "${UNION_STATUS_LABEL[status]}".` });
+      onChanged();
+    } catch (e) {
+      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
+    }
+  }
+
+  async function remove(u: Union) {
+    if (!confirm("Remover este vínculo de cônjuge?")) return;
+    try {
+      await deleteUnion(u.id);
+      toast({ title: "Vínculo removido." });
       onChanged();
     } catch (e) {
       toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
@@ -422,19 +451,57 @@ function AddSpouse({
   }
 
   return (
-    <div className="flex gap-2 items-center pt-2 border-t border-border">
-      <Heart className="h-4 w-4 text-female shrink-0" />
-      <Select value={value} onValueChange={setValue}>
-        <SelectTrigger className="flex-1"><SelectValue placeholder="Vincular cônjuge..." /></SelectTrigger>
-        <SelectContent>
-          {options.map((p) => (
-            <SelectItem key={p.id} value={p.id}>{fullName(p)}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Button size="sm" onClick={add} disabled={!value}>
-        <Plus className="h-4 w-4" />
-      </Button>
+    <div>
+      <div className="text-xs font-semibold text-muted-foreground mb-1">Cônjuge(s)</div>
+      <div className="space-y-2">
+        {mine.map((u) => {
+          const otherId = u.partner1_id === person.id ? u.partner2_id : u.partner1_id;
+          const other = byId.get(otherId);
+          if (!other) return null;
+          const former = isFormerUnion(u);
+          return (
+            <div key={u.id} className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => onNavigate?.(other.id)}
+                className="flex items-center gap-2 rounded-full border border-border pl-1 pr-3 py-1 hover:bg-secondary transition-colors"
+              >
+                <PersonAvatar person={other} className="h-7 w-7 ring-1 ring-offset-1" />
+                <span className="text-sm">{fullName(other)}</span>
+              </button>
+              {canEdit ? (
+                <Select value={u.status} onValueChange={(v) => changeStatus(u, v as UnionStatus)}>
+                  <SelectTrigger className="h-7 w-[160px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UNION_STATUS_OPTIONS.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {UNION_STATUS_LABEL[s]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge variant={former ? "outline" : "secondary"} className="gap-1">
+                  <Heart className="h-3 w-3" />
+                  {UNION_STATUS_LABEL[u.status]}
+                </Badge>
+              )}
+              {canEdit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => remove(u)}
+                  aria-label="Remover vínculo"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

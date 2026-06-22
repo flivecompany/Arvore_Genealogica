@@ -14,6 +14,7 @@ import type {
   GlobalPersonMatch,
   LinkRequest,
   PendingConsent,
+  UnionStatus,
 } from "@/integrations/supabase/types";
 
 // ---------------------- Árvores ----------------------
@@ -110,7 +111,8 @@ export async function addUnion(
   treeId: string,
   partner1Id: string,
   partner2Id: string,
-  kind = "marriage"
+  kind = "marriage",
+  status: UnionStatus = "married"
 ): Promise<Union> {
   const { data, error } = await supabase
     .from("genea_unions")
@@ -119,11 +121,21 @@ export async function addUnion(
       partner1_id: partner1Id,
       partner2_id: partner2Id,
       kind,
+      status,
     })
     .select()
     .single();
   if (error) throw error;
   return data as Union;
+}
+
+/** Atualiza uma união (ex.: marcar como divorciado/separado, datas). */
+export async function updateUnion(
+  id: string,
+  fields: Partial<Pick<Union, "status" | "kind" | "started_on" | "ended_on" | "place">>
+): Promise<void> {
+  const { error } = await supabase.from("genea_unions").update(fields).eq("id", id);
+  if (error) throw error;
 }
 
 export async function deleteUnion(id: string): Promise<void> {

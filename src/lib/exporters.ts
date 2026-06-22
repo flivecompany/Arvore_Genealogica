@@ -73,7 +73,12 @@ export function toGedcom(people: Person[], unions: Union[], treeName = "Família
   ];
 
   // Famílias = uniões + grupos pai/mãe->filhos
-  type Fam = { husb?: string; wife?: string; chil: Set<string> };
+  type Fam = {
+    husb?: string;
+    wife?: string;
+    chil: Set<string>;
+    status?: Union["status"];
+  };
   const fams = new Map<string, Fam>();
   const famKey = (a?: string | null, b?: string | null) =>
     [a ?? "_", b ?? "_"].sort().join("|");
@@ -84,6 +89,7 @@ export function toGedcom(people: Person[], unions: Union[], treeName = "Família
     const f = fams.get(key)!;
     f.husb = u.partner1_id;
     f.wife = u.partner2_id;
+    f.status = u.status;
   }
   for (const p of people) {
     if (!p.father_id && !p.mother_id) continue;
@@ -125,6 +131,12 @@ export function toGedcom(people: Person[], unions: Union[], treeName = "Família
     if (f.husb && idx.has(f.husb)) lines.push(`1 HUSB @${idx.get(f.husb)}@`);
     if (f.wife && idx.has(f.wife)) lines.push(`1 WIFE @${idx.get(f.wife)}@`);
     for (const c of f.chil) if (idx.has(c)) lines.push(`1 CHIL @${idx.get(c)}@`);
+    // Eventos do casal (situação): casamento e, se encerrada, divórcio.
+    if (f.husb && f.wife) {
+      lines.push("1 MARR");
+      if (f.status === "divorced") lines.push("1 DIV Y");
+      else if (f.status === "separated") lines.push("1 DIV");
+    }
   }
 
   lines.push("0 TRLR");
