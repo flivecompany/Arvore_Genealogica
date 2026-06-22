@@ -31,6 +31,7 @@ export interface Person {
   occupation: string | null;
   biography: string | null;
   notes: string | null;
+  email: string | null;
   social_links: SocialLink[];
   created_by: string | null;
   created_at: string;
@@ -143,6 +144,14 @@ export interface LinkRequest {
   resolved_by: string | null;
   created_at: string;
   resolved_at: string | null;
+}
+
+export interface PendingConsent {
+  id: number;
+  tree_id: string;
+  tree_name: string;
+  person_id: string;
+  person_name: string;
 }
 
 export interface TreeStats {
