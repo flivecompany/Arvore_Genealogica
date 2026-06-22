@@ -43,9 +43,11 @@ const ROLES = [
 const STEPS = [
   { icon: UserPlus, title: "Cadastrar pessoas", desc: "Use o botão “Adicionar pessoa” na árvore, ou abra um cartão e adicione pai, mãe, cônjuge ou filho — já vinculados." },
   { icon: Network, title: "Navegar na árvore", desc: "Arraste para mover, role para dar zoom e clique num cartão para ver detalhes. Use Ancestrais/Descendentes para destacar linhagens." },
-  { icon: Search, title: "Buscar e filtrar", desc: "Em “Pessoas”, filtre por nome, cidade, ano, sexo e situação. Na árvore, a busca centraliza a pessoa." },
+  { icon: Network, title: "Visões da árvore", desc: "Alterne entre Organograma (um grupo por vez) e Todas as pessoas (rede com zoom, que mostra os desconectados). Se houver grupos separados, escolha no seletor “Grupo familiar”." },
+  { icon: Bell, title: "Notificações", desc: "O sino avisa pedidos de acesso e de inclusão de pessoas — aprove com 1 clique." },
+  { icon: UserPlus, title: "Sem duplicados", desc: "Ao cadastrar, se o nome já existir (na sua árvore ou em outra família), o sistema avisa e oferece solicitar permissão antes de duplicar." },
+  { icon: Search, title: "Buscar e filtrar", desc: "Em “Pessoas” (tabela), filtre por nome, cidade, ano, sexo e situação. Na árvore, a busca centraliza a pessoa." },
   { icon: Share2, title: "Compartilhar", desc: "Em “Compartilhar”: link somente-leitura (sem login) ou convite de edição (com aprovação)." },
-  { icon: Bell, title: "Aprovar acessos", desc: "Quando alguém pede acesso de edição, o administrador recebe uma notificação no sino e aprova com 1 clique." },
   { icon: Download, title: "Exportar", desc: "Baixe a árvore em PDF, imagem (PNG) ou GEDCOM (padrão de genealogia)." },
 ];
 
@@ -118,6 +120,48 @@ export default function Ajuda() {
               </Card>
             );
           })}
+        </div>
+      </section>
+
+      {/* Legenda do cartão */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">Entendendo o cartão da pessoa</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="p-4 space-y-3 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-5 h-5 rounded border-2" style={{ borderColor: "#1498d5" }} />
+              Borda azul = sexo <strong>masculino</strong>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-5 h-5 rounded border-2" style={{ borderColor: "#fd4817" }} />
+              Borda laranja = sexo <strong>feminino</strong>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">falecido(a)</Badge>
+              <span>indica que a pessoa já faleceu</span>
+            </div>
+          </Card>
+
+          <Card className="p-4 space-y-3 text-sm">
+            <div className="font-medium">Retângulos coloridos no canto do cartão</div>
+            <p className="text-xs text-muted-foreground">
+              Aparecem quando a pessoa tem <strong>parentes ocultos</strong> (não
+              exibidos no momento). <strong>Clique no cartão</strong> para expandir e
+              mostrá-los. A cor indica o sexo do parente oculto:
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-7 h-3.5 rounded" style={{ backgroundColor: "rgb(120,159,172)" }} />
+              <span>parente <strong>masculino</strong> oculto (ex.: pai/filho)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-7 h-3.5 rounded" style={{ backgroundColor: "rgb(196,138,146)" }} />
+              <span>parente <strong>feminino</strong> oculto (ex.: mãe/filha)</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Dica: na visão <strong>“Todas as pessoas”</strong> (rede) você vê todos de
+              uma vez, inclusive os desconectados.
+            </p>
+          </Card>
         </div>
       </section>
 
