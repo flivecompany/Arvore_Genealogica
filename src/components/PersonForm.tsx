@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,9 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2, Plus, Loader2 } from "lucide-react";
-import type { Person, Sex, SocialLink } from "@/integrations/supabase/types";
-import { upsertPerson, type PersonInput } from "@/lib/people";
+import { Trash2, Plus, Loader2, AlertTriangle, Send, Check, Users } from "lucide-react";
+import type {
+  Person,
+  Sex,
+  SocialLink,
+  GlobalPersonMatch,
+} from "@/integrations/supabase/types";
+import {
+  upsertPerson,
+  searchGlobalPeople,
+  requestPersonLink,
+  type PersonInput,
+} from "@/lib/people";
 import { uploadFile } from "@/lib/storage";
 import { fullName } from "@/lib/genealogy";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +43,9 @@ export function PersonForm({ treeId, people, initial, onSaved, onCancel }: Props
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [crossMatches, setCrossMatches] = useState<GlobalPersonMatch[]>([]);
+  const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set());
+  const [allowDuplicate, setAllowDuplicate] = useState(false);
   const [form, setForm] = useState<PersonInput>({
     tree_id: treeId,
     id: initial?.id,
@@ -60,6 +73,56 @@ export function PersonForm({ treeId, people, initial, onSaved, onCancel }: Props
   const set = <K extends keyof PersonInput>(k: K, v: PersonInput[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  // Aviso anti-duplicado: nome igual (ignorando acentos/caixa) já existente.
+  const duplicateName = useMemo(() => {
+    const norm = (s: string) =>
+      s
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, " ");
+    const cur = norm(`${form.first_name ?? ""} ${form.last_name ?? ""}`);
+    if (cur.length < 3) return null;
+    const match = people.find(
+      (p) => p.id !== initial?.id && norm(`${p.first_name} ${p.last_name ?? ""}`) === cur
+    );
+    return match ? fullName(match) : null;
+  }, [form.first_name, form.last_name, people, initial?.id]);
+
+  // Busca (ao vivo) pessoas com o mesmo nome em OUTRAS árvores da plataforma.
+  const fullNameTyped = `${form.first_name ?? ""} ${form.last_name ?? ""}`.trim();
+  useEffect(() => {
+    if (initial?.id || fullNameTyped.length < 3) {
+      setCrossMatches([]);
+      return;
+    }
+    const t = setTimeout(() => {
+      searchGlobalPeople(fullNameTyped)
+        .then(setCrossMatches)
+        .catch(() => setCrossMatches([]));
+    }, 450);
+    return () => clearTimeout(t);
+  }, [fullNameTyped, initial?.id]);
+
+  const hasPossibleMatch = !initial?.id && (!!duplicateName || crossMatches.length > 0);
+
+  async function requestLink(m: GlobalPersonMatch) {
+    try {
+      const r = await requestPersonLink(m.person_id, treeId);
+      setRequestedIds((s) => new Set(s).add(m.person_id));
+      toast({
+        title:
+          r.status === "ok"
+            ? "Permissão solicitada!"
+            : "Você já havia solicitado esta pessoa.",
+        description: "Ela aparecerá na sua árvore quando a família dela autorizar.",
+      });
+    } catch (e) {
+      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
+    }
+  }
+
   const candidates = people.filter((p) => p.id !== initial?.id);
   const males = candidates.filter((p) => p.sex !== "female");
   const females = candidates.filter((p) => p.sex !== "male");
@@ -73,6 +136,15 @@ export function PersonForm({ treeId, people, initial, onSaved, onCancel }: Props
   async function handleSubmit() {
     if (!form.first_name?.trim()) {
       toast({ title: "Informe ao menos o nome.", variant: "destructive" });
+      return;
+    }
+    if (hasPossibleMatch && !allowDuplicate) {
+      toast({
+        title: "Possível familiaridade pelo nome",
+        description:
+          "Use a pessoa existente, solicite permissão, ou confirme em 'Criar assim mesmo'.",
+        variant: "destructive",
+      });
       return;
     }
     setSaving(true);
@@ -132,6 +204,72 @@ export function PersonForm({ treeId, people, initial, onSaved, onCancel }: Props
           <Input type="file" accept="image/*" onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)} />
         </Field>
       </div>
+
+      {hasPossibleMatch && (
+        <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 space-y-2">
+          <div className="text-sm font-semibold flex items-center gap-1.5">
+            <AlertTriangle className="h-4 w-4 text-warning" /> Possível familiaridade pelo nome
+          </div>
+          {duplicateName && (
+            <p className="text-sm">
+              Já existe <strong>{duplicateName}</strong> nesta árvore. Se for a mesma
+              pessoa, cancele e use a existente.
+            </p>
+          )}
+          {crossMatches.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">
+                Há pessoas com este nome em outras famílias. Solicite permissão para
+                incluí-la — ela aparecerá na sua árvore quando autorizarem:
+              </p>
+              {crossMatches.map((m) => {
+                const done = requestedIds.has(m.person_id);
+                return (
+                  <div
+                    key={m.person_id}
+                    className="flex items-center justify-between gap-2 border-t border-border/50 pt-1"
+                  >
+                    <span className="text-sm flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                      {m.full_name}
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={done ? "ghost" : "outline"}
+                      disabled={done}
+                      onClick={() => requestLink(m)}
+                    >
+                      {done ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 mr-1" /> Solicitado
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-3.5 w-3.5 mr-1" /> Solicitar permissão
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {!allowDuplicate ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => setAllowDuplicate(true)}
+            >
+              Não é a mesma pessoa — criar assim mesmo (duplicar)
+            </Button>
+          ) : (
+            <p className="text-xs text-success">Ok — pode salvar como nova pessoa.</p>
+          )}
+        </div>
+      )}
 
       {/* Nascimento */}
       <fieldset className="border border-border rounded-lg p-3 space-y-3">
