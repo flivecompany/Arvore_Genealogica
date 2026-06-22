@@ -123,7 +123,7 @@ create index if not exists genea_media_tree_idx on genea_media(tree_id);
 create table if not exists genea_share_links (
   token        text primary key default encode(gen_random_bytes(16), 'hex'),
   tree_id      uuid not null references genea_trees(id) on delete cascade,
-  created_by   uuid not null references auth.users(id) on delete cascade,
+  created_by   uuid not null default auth.uid() references auth.users(id) on delete cascade,
   expires_at   timestamptz,
   revoked      boolean not null default false,
   created_at   timestamptz not null default now()
