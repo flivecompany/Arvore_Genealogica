@@ -160,14 +160,20 @@ returns boolean language sql security definer stable set search_path = public as
     select 1 from genea_members m
     where m.tree_id = p_tree and m.user_id = auth.uid()
       and m.role in ('admin','editor')
+  ) or exists (
+    select 1 from genea_trees t where t.id = p_tree and t.created_by = auth.uid()
   );
 $$;
 
+-- O dono da árvore (created_by) é sempre admin, mesmo que seu papel em
+-- genea_members seja alterado — evita o dono ficar travado sem permissões.
 create or replace function genea_is_admin(p_tree uuid)
 returns boolean language sql security definer stable set search_path = public as $$
   select exists (
     select 1 from genea_members m
     where m.tree_id = p_tree and m.user_id = auth.uid() and m.role = 'admin'
+  ) or exists (
+    select 1 from genea_trees t where t.id = p_tree and t.created_by = auth.uid()
   );
 $$;
 
