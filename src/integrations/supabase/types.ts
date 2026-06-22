@@ -115,12 +115,34 @@ export interface AppNotification {
   id: number;
   tree_id: string | null;
   recipient: string;
-  kind: "access_request" | "access_approved" | "info";
+  kind: "access_request" | "access_approved" | "link_resolved" | "info";
   actor: string | null;
   actor_email: string | null;
   message: string;
   read: boolean;
   created_at: string;
+}
+
+export interface GlobalPersonMatch {
+  person_id: string;
+  full_name: string;
+}
+
+export interface LinkRequest {
+  id: number;
+  requester_tree_id: string;
+  requester_tree_name: string | null;
+  requester_user: string;
+  requester_email: string | null;
+  target_person_id: string;
+  target_tree_id: string;
+  target_name: string | null;
+  status: "pending" | "approved" | "denied";
+  message: string | null;
+  created_person_id: string | null;
+  resolved_by: string | null;
+  created_at: string;
+  resolved_at: string | null;
 }
 
 export interface TreeStats {

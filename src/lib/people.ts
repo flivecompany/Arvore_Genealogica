@@ -11,6 +11,8 @@ import type {
   MemberRole,
   InviteLink,
   AppNotification,
+  GlobalPersonMatch,
+  LinkRequest,
 } from "@/integrations/supabase/types";
 
 // ---------------------- Árvores ----------------------
@@ -310,6 +312,49 @@ export async function markNotificationsRead(ids: number[]): Promise<void> {
 /** Membro pendente reenvia o pedido de aprovação aos administradores. */
 export async function requestApproval(treeId: string): Promise<void> {
   const { error } = await supabase.rpc("genea_request_approval", { p_tree: treeId });
+  if (error) throw error;
+}
+
+// ---------------------- Vínculo entre árvores (consentimento) ----------------------
+/** Busca pessoas em outras árvores da plataforma — retorna apenas o nome. */
+export async function searchGlobalPeople(query: string): Promise<GlobalPersonMatch[]> {
+  if (query.trim().length < 3) return [];
+  const { data, error } = await supabase.rpc("genea_search_people_global", {
+    p_query: query,
+  });
+  if (error) throw error;
+  return (data as GlobalPersonMatch[]) ?? [];
+}
+
+/** Solicita incluir, na sua árvore, uma pessoa que existe em outra árvore. */
+export async function requestPersonLink(
+  targetPersonId: string,
+  requesterTreeId: string
+): Promise<{ status: string }> {
+  const { data, error } = await supabase.rpc("genea_request_person_link", {
+    p_target_person: targetPersonId,
+    p_requester_tree: requesterTreeId,
+  });
+  if (error) throw error;
+  return data as { status: string };
+}
+
+/** Pedidos de vínculo recebidos (pendentes) na árvore ativa. */
+export async function listLinkRequests(): Promise<LinkRequest[]> {
+  const { data, error } = await supabase
+    .from("genea_link_requests")
+    .select("*")
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as LinkRequest[]) ?? [];
+}
+
+export async function resolveLinkRequest(id: number, approve: boolean): Promise<void> {
+  const { error } = await supabase.rpc("genea_resolve_link_request", {
+    p_request: id,
+    p_approve: approve,
+  });
   if (error) throw error;
 }
 

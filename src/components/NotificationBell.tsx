@@ -8,8 +8,10 @@ import {
   markNotificationsRead,
   approveMember,
   requestApproval,
+  listLinkRequests,
+  resolveLinkRequest,
 } from "@/lib/people";
-import type { AppNotification } from "@/integrations/supabase/types";
+import type { AppNotification, LinkRequest } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 
 export function NotificationBell() {
@@ -18,11 +20,15 @@ export function NotificationBell() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState<AppNotification[]>([]);
+  const [linkReqs, setLinkReqs] = useState<LinkRequest[]>([]);
   const [asking, setAsking] = useState(false);
 
   const load = useCallback(() => {
     if (!user) return;
     listNotifications().then(setNotifs).catch(() => {});
+    listLinkRequests()
+      .then((rs) => setLinkReqs(rs.filter((r) => r.requester_user !== user.id)))
+      .catch(() => {});
   }, [user]);
 
   useEffect(() => {
@@ -41,7 +47,22 @@ export function NotificationBell() {
   }, [load]);
 
   const unread = notifs.filter((n) => !n.read).length;
+  const alertCount = unread + linkReqs.length;
   const isPending = role === "pending";
+
+  async function resolveLink(r: LinkRequest, approve: boolean) {
+    try {
+      await resolveLinkRequest(r.id, approve);
+      toast({
+        title: approve
+          ? "Permitido — a pessoa foi adicionada à árvore solicitante."
+          : "Pedido recusado.",
+      });
+      load();
+    } catch (e) {
+      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
+    }
+  }
 
   async function togglePanel() {
     const next = !open;
@@ -83,9 +104,9 @@ export function NotificationBell() {
     <div className="relative">
       <Button variant="ghost" size="icon" aria-label="Notificações" onClick={togglePanel}>
         <Bell className="h-5 w-5" />
-        {(unread > 0 || isPending) && (
+        {(alertCount > 0 || isPending) && (
           <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-accent text-accent-foreground text-[10px] font-bold grid place-items-center">
-            {unread > 0 ? unread : "!"}
+            {alertCount > 0 ? alertCount : "!"}
           </span>
         )}
       </Button>
@@ -109,7 +130,33 @@ export function NotificationBell() {
               </div>
             )}
 
-            {notifs.length === 0 && !isPending && (
+            {linkReqs.map((r) => (
+              <div
+                key={`lr-${r.id}`}
+                className="m-1 p-2 rounded-lg border border-primary/30 bg-primary/5 space-y-1.5"
+              >
+                <p className="text-sm">
+                  A família <strong>{r.requester_tree_name ?? "outra árvore"}</strong> quer
+                  incluir <strong>{r.target_name ?? "uma pessoa"}</strong> na árvore deles.
+                  Permite compartilhar?
+                </p>
+                <div className="flex gap-2">
+                  <Button size="sm" className="h-7" onClick={() => resolveLink(r, true)}>
+                    <Check className="h-3.5 w-3.5 mr-1" /> Permitir
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-destructive"
+                    onClick={() => resolveLink(r, false)}
+                  >
+                    Recusar
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            {notifs.length === 0 && linkReqs.length === 0 && !isPending && (
               <p className="text-sm text-muted-foreground text-center py-6">
                 Nenhuma notificação.
               </p>
