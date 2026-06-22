@@ -5,6 +5,7 @@ import {
   useState,
   ReactNode,
   useCallback,
+  useRef,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tree, MemberRole } from "@/integrations/supabase/types";
@@ -32,6 +33,7 @@ export function TreeProvider({ children }: { children: ReactNode }) {
   const [activeTree, setActive] = useState<Tree | null>(null);
   const [role, setRole] = useState<MemberRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const provisioningRef = useRef(false);
 
   const loadRole = useCallback(
     async (treeId: string, userId: string) => {
@@ -55,7 +57,18 @@ export function TreeProvider({ children }: { children: ReactNode }) {
     }
     setIsLoading(true);
     try {
-      const list = await listMyTrees();
+      let list = await listMyTrees();
+      // Provisiona automaticamente a primeira árvore para um usuário novo,
+      // garantindo que sempre haja uma árvore ativa (e o usuário como admin).
+      if (list.length === 0 && !provisioningRef.current) {
+        provisioningRef.current = true;
+        try {
+          const created = await createTree("Minha Família");
+          list = [created];
+        } catch (e) {
+          if (import.meta.env.DEV) console.error("auto-provision tree failed", e);
+        }
+      }
       setTrees(list);
       const saved = localStorage.getItem(ACTIVE_KEY);
       const next = list.find((t) => t.id === saved) ?? list[0] ?? null;
@@ -95,14 +108,18 @@ export function TreeProvider({ children }: { children: ReactNode }) {
     [refreshTrees, setActiveTree]
   );
 
+  // O dono da árvore (created_by) sempre tem permissão de edição/admin, mesmo
+  // que a leitura do papel em genea_members ainda não tenha retornado.
+  const isOwner = !!(activeTree && user && activeTree.created_by === user.id);
+
   return (
     <TreeContext.Provider
       value={{
         trees,
         activeTree,
         role,
-        canEdit: role === "admin" || role === "editor",
-        isAdmin: role === "admin",
+        canEdit: role === "admin" || role === "editor" || isOwner,
+        isAdmin: role === "admin" || isOwner,
         isLoading,
         setActiveTree,
         refreshTrees,

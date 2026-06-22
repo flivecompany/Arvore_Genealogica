@@ -31,6 +31,7 @@ const NONE = "__none__";
 export function PersonForm({ treeId, people, initial, onSaved, onCancel }: Props) {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [form, setForm] = useState<PersonInput>({
     tree_id: treeId,
@@ -75,6 +76,7 @@ export function PersonForm({ treeId, people, initial, onSaved, onCancel }: Props
       return;
     }
     setSaving(true);
+    setErrorMsg(null);
     try {
       let avatar_url = form.avatar_url ?? null;
       if (avatarFile) avatar_url = await uploadFile(treeId, avatarFile, "avatars");
@@ -90,11 +92,11 @@ export function PersonForm({ treeId, people, initial, onSaved, onCancel }: Props
       toast({ title: "Registro salvo." });
       onSaved(saved);
     } catch (e) {
-      toast({
-        title: "Erro ao salvar",
-        description: (e as Error).message,
-        variant: "destructive",
-      });
+      const msg = (e as Error).message || "Falha desconhecida ao salvar.";
+      // eslint-disable-next-line no-console
+      console.error("Erro ao salvar pessoa:", e);
+      setErrorMsg(msg);
+      toast({ title: "Erro ao salvar", description: msg, variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -218,6 +220,12 @@ export function PersonForm({ treeId, people, initial, onSaved, onCancel }: Props
           </div>
         ))}
       </div>
+
+      {errorMsg && (
+        <p className="text-sm text-destructive border border-destructive/40 rounded-md p-2 bg-destructive/5 break-words">
+          {errorMsg}
+        </p>
+      )}
 
       <div className="flex justify-end gap-2 pt-2">
         {onCancel && (
