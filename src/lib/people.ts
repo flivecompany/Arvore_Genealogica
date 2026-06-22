@@ -10,6 +10,7 @@ import type {
   Member,
   MemberRole,
   InviteLink,
+  AppNotification,
 } from "@/integrations/supabase/types";
 
 // ---------------------- Árvores ----------------------
@@ -265,12 +266,50 @@ export async function setMemberRole(
   if (error) throw error;
 }
 
+/** Aprova um membro pendente (vira gestor/editor) e notifica a pessoa.
+ *  Se a RPC ainda não existir no banco, cai para a atualização direta do papel. */
+export async function approveMember(treeId: string, userId: string): Promise<void> {
+  const { error } = await supabase.rpc("genea_approve_member", {
+    p_tree: treeId,
+    p_user: userId,
+  });
+  if (error) {
+    await setMemberRole(treeId, userId, "editor");
+  }
+}
+
 export async function removeMember(treeId: string, userId: string): Promise<void> {
   const { error } = await supabase
     .from("genea_members")
     .delete()
     .eq("tree_id", treeId)
     .eq("user_id", userId);
+  if (error) throw error;
+}
+
+// ---------------------- Notificações ----------------------
+export async function listNotifications(limit = 30): Promise<AppNotification[]> {
+  const { data, error } = await supabase
+    .from("genea_notifications")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data as AppNotification[]) ?? [];
+}
+
+export async function markNotificationsRead(ids: number[]): Promise<void> {
+  if (ids.length === 0) return;
+  const { error } = await supabase
+    .from("genea_notifications")
+    .update({ read: true })
+    .in("id", ids);
+  if (error) throw error;
+}
+
+/** Membro pendente reenvia o pedido de aprovação aos administradores. */
+export async function requestApproval(treeId: string): Promise<void> {
+  const { error } = await supabase.rpc("genea_request_approval", { p_tree: treeId });
   if (error) throw error;
 }
 

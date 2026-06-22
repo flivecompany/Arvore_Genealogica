@@ -25,8 +25,10 @@ import {
   listMembers,
   setMemberRole,
   removeMember,
+  approveMember,
 } from "@/lib/people";
 import type { AuditEntry, Member, MemberRole } from "@/integrations/supabase/types";
+import { ROLE_LABEL } from "@/lib/roles";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Admin() {
@@ -62,8 +64,8 @@ export default function Admin() {
   async function approve(m: Member) {
     if (!treeId) return;
     try {
-      await setMemberRole(treeId, m.user_id, "editor");
-      toast({ title: `${who(m)} aprovado como editor.` });
+      await approveMember(treeId, m.user_id);
+      toast({ title: `${who(m)} aprovado como Gestor.` });
       reload();
     } catch (e) {
       toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
@@ -164,9 +166,9 @@ export default function Admin() {
                           <Select value={m.role} onValueChange={(v) => changeRole(m, v as MemberRole)}>
                             <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="admin">Administrador</SelectItem>
-                              <SelectItem value="editor">Editor</SelectItem>
-                              <SelectItem value="viewer">Visualizador</SelectItem>
+                              <SelectItem value="admin">{ROLE_LABEL.admin}</SelectItem>
+                              <SelectItem value="editor">{ROLE_LABEL.editor}</SelectItem>
+                              <SelectItem value="viewer">{ROLE_LABEL.viewer}</SelectItem>
                             </SelectContent>
                           </Select>
                         )}

@@ -8,9 +8,11 @@ import {
   LogOut,
   ChevronDown,
   Plus,
+  HelpCircle,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
+import { NotificationBell } from "./NotificationBell";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,6 +30,7 @@ const NAV = [
   { to: "/arvore", label: "Árvore", icon: Network },
   { to: "/pessoas", label: "Pessoas", icon: Users },
   { to: "/dashboard", label: "Painel", icon: LayoutDashboard },
+  { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -100,6 +103,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="ml-auto md:ml-2 flex items-center gap-1">
+            <NotificationBell />
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

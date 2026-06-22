@@ -14,6 +14,7 @@ import TreeView from "./pages/TreeView";
 import People from "./pages/People";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
+import Ajuda from "./pages/Ajuda";
 import Shared from "./pages/Shared";
 import Convite from "./pages/Convite";
 import NotFound from "./pages/NotFound";
@@ -57,6 +58,7 @@ const App = () => (
                 <Route path="/pessoas" element={<People />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/ajuda" element={<Ajuda />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

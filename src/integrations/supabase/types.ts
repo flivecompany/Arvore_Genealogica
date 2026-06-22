@@ -111,6 +111,18 @@ export interface AuditEntry {
   created_at: string;
 }
 
+export interface AppNotification {
+  id: number;
+  tree_id: string | null;
+  recipient: string;
+  kind: "access_request" | "access_approved" | "info";
+  actor: string | null;
+  actor_email: string | null;
+  message: string;
+  read: boolean;
+  created_at: string;
+}
+
 export interface TreeStats {
   people: number;
   living: number;
