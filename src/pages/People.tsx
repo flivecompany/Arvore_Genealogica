@@ -16,13 +16,22 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PersonAvatar } from "@/components/PersonAvatar";
-import { SexIcon } from "@/components/SexIcon";
+import { SexIcon, sexLabel } from "@/components/SexIcon";
 import { PersonDialog } from "@/components/PersonDialog";
 import { PersonForm } from "@/components/PersonForm";
 import { useTree } from "@/hooks/useTree";
 import { useTreeData } from "@/hooks/useTreeData";
-import { fullName, lifeSpan } from "@/lib/genealogy";
+import { fullName, formatDate } from "@/lib/genealogy";
 import type { Person, Sex } from "@/integrations/supabase/types";
 
 export default function People() {
@@ -109,32 +118,63 @@ export default function People() {
       </Card>
 
       {/* Grade */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-        {filtered.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => { setSelected(p); setOpen(true); }}
-            className="text-left"
-          >
-            <Card className="p-3 flex items-center gap-3 hover:shadow-card hover:border-primary/40 transition-all">
-              <PersonAvatar person={p} className="h-12 w-12" />
-              <div className="min-w-0">
-                <div className="font-medium truncate flex items-center gap-1">
-                  {fullName(p)} <SexIcon sex={p.sex} className="h-3.5 w-3.5" />
-                </div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {lifeSpan(p) || "—"}{p.birth_place ? ` · ${p.birth_place}` : ""}
-                </div>
-              </div>
-            </Card>
-          </button>
-        ))}
-        {filtered.length === 0 && (
-          <p className="text-muted-foreground col-span-full text-center py-10">
-            Nenhuma pessoa encontrada com esses filtros.
-          </p>
-        )}
-      </div>
+      <Card className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead>Sexo</TableHead>
+              <TableHead>Nascimento</TableHead>
+              <TableHead>Local</TableHead>
+              <TableHead>Situação</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((p) => (
+              <TableRow
+                key={p.id}
+                className="cursor-pointer"
+                onClick={() => { setSelected(p); setOpen(true); }}
+              >
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <PersonAvatar person={p} className="h-8 w-8" />
+                    <span className="font-medium">{fullName(p)}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="flex items-center gap-1 text-sm">
+                    <SexIcon sex={p.sex} className="h-3.5 w-3.5" /> {sexLabel(p.sex)}
+                  </span>
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-sm">
+                  {formatDate(p.birth_date, p.birth_date_text) || "—"}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {p.birth_place || "—"}
+                </TableCell>
+                <TableCell>
+                  {p.is_living ? (
+                    <Badge variant="secondary">Vivo(a)</Badge>
+                  ) : (
+                    <Badge variant="outline">
+                      Falecido(a)
+                      {p.death_date ? ` · ${new Date(p.death_date).getFullYear()}` : ""}
+                    </Badge>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+            {filtered.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
+                  Nenhuma pessoa encontrada com esses filtros.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
 
       <PersonDialog
         person={selected}

@@ -13,14 +13,12 @@ import {
   LayoutGrid,
 } from "lucide-react";
 const FamilyTree = lazy(() => import("@/components/FamilyTree"));
+const NetworkView = lazy(() => import("@/components/NetworkView"));
 import { PersonDialog } from "@/components/PersonDialog";
 import { PersonForm } from "@/components/PersonForm";
 import { ShareDialog } from "@/components/ShareDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { PersonAvatar } from "@/components/PersonAvatar";
-import { SexIcon } from "@/components/SexIcon";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -30,12 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { useTree } from "@/hooks/useTree";
 import { useTreeData } from "@/hooks/useTreeData";
-import {
-  fullName,
-  lifeSpan,
-  ancestorsOf,
-  descendantsOf,
-} from "@/lib/genealogy";
+import { fullName, ancestorsOf, descendantsOf } from "@/lib/genealogy";
 import { exportPdf, exportPng, downloadGedcom } from "@/lib/exporters";
 import { useToast } from "@/hooks/use-toast";
 import type { Person } from "@/integrations/supabase/types";
@@ -64,13 +57,6 @@ export default function TreeView() {
       .filter((p) => fullName(p).toLowerCase().includes(q))
       .slice(0, 8);
   }, [search, people]);
-
-  // Lista para a visão "Todas as pessoas" (inclui não conectadas), com busca.
-  const allShown = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const base = q ? people.filter((p) => fullName(p).toLowerCase().includes(q)) : people;
-    return [...base].sort((a, b) => fullName(a).localeCompare(fullName(b)));
-  }, [people, search]);
 
   const highlight = useMemo(() => {
     if (hlMode !== "none" && focusId) {
@@ -238,29 +224,15 @@ export default function TreeView() {
             </div>
           </div>
         ) : view === "all" ? (
-          <div className="absolute inset-0 overflow-y-auto p-4">
-            <p className="text-xs text-muted-foreground mb-3">
-              Todas as pessoas da árvore ({allShown.length}), inclusive as que ainda
-              não estão conectadas no organograma.
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {allShown.map((p) => (
-                <button key={p.id} onClick={() => openPerson(p.id)} className="text-left">
-                  <Card className="p-3 flex items-center gap-2 hover:border-primary/40 hover:shadow-card transition">
-                    <PersonAvatar person={p} className="h-10 w-10" />
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium truncate flex items-center gap-1">
-                        {fullName(p)} <SexIcon sex={p.sex} className="h-3 w-3" />
-                      </div>
-                      <div className="text-[11px] text-muted-foreground truncate">
-                        {lifeSpan(p) || "—"}
-                      </div>
-                    </div>
-                  </Card>
-                </button>
-              ))}
-            </div>
-          </div>
+          <Suspense
+            fallback={
+              <div className="absolute inset-0 grid place-items-center text-muted-foreground">
+                Carregando rede...
+              </div>
+            }
+          >
+            <NetworkView people={people} unions={unions} onSelect={openPerson} />
+          </Suspense>
         ) : (
           <Suspense
             fallback={
