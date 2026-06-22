@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   forceSimulation,
   forceManyBody,
@@ -7,6 +7,7 @@ import {
   forceCollide,
   type SimulationNodeDatum,
 } from "d3-force";
+import { ZoomIn, ZoomOut, Maximize } from "lucide-react";
 import type { Person, Union } from "@/integrations/supabase/types";
 import { fullName, initials } from "@/lib/genealogy";
 
@@ -40,6 +41,58 @@ export default function NetworkView({
   onSelect?: (id: string) => void;
 }) {
   const [hover, setHover] = useState<string | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [t, setT] = useState({ k: 1, x: 0, y: 0 });
+  const drag = useRef<{ x: number; y: number } | null>(null);
+
+  // Converte coordenadas de tela para coordenadas do viewBox.
+  function toView(clientX: number, clientY: number) {
+    const svg = svgRef.current;
+    if (!svg) return { x: 0, y: 0 };
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const p = pt.matrixTransform(ctm.inverse());
+    return { x: p.x, y: p.y };
+  }
+
+  function zoomAt(clientX: number, clientY: number, factor: number) {
+    setT((cur) => {
+      const k = Math.min(8, Math.max(0.15, cur.k * factor));
+      const pv = toView(clientX, clientY);
+      // mantém o ponto sob o cursor fixo
+      const x = pv.x - ((pv.x - cur.x) / cur.k) * k;
+      const y = pv.y - ((pv.y - cur.y) / cur.k) * k;
+      return { k, x, y };
+    });
+  }
+
+  function onWheel(e: React.WheelEvent) {
+    e.preventDefault();
+    zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.15 : 1 / 1.15);
+  }
+  function onMouseDown(e: React.MouseEvent) {
+    drag.current = toView(e.clientX, e.clientY);
+  }
+  function onMouseMove(e: React.MouseEvent) {
+    if (!drag.current) return;
+    const p = toView(e.clientX, e.clientY);
+    const dx = p.x - drag.current.x;
+    const dy = p.y - drag.current.y;
+    drag.current = p;
+    setT((cur) => ({ ...cur, x: cur.x + dx, y: cur.y + dy }));
+  }
+  function endDrag() {
+    drag.current = null;
+  }
+  function centerZoom(factor: number) {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const r = svg.getBoundingClientRect();
+    zoomAt(r.left + r.width / 2, r.top + r.height / 2, factor);
+  }
 
   const { nodes, links, degree, viewBox, disconnected } = useMemo(() => {
     const byId = new Set(people.map((p) => p.id));
@@ -111,7 +164,19 @@ export default function NetworkView({
         </span>
       </div>
 
-      <svg viewBox={viewBox} preserveAspectRatio="xMidYMid meet" className="flex-1 w-full h-full">
+      <div className="relative flex-1">
+        <svg
+          ref={svgRef}
+          viewBox={viewBox}
+          preserveAspectRatio="xMidYMid meet"
+          className="w-full h-full cursor-grab active:cursor-grabbing select-none"
+          onWheel={onWheel}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={endDrag}
+          onMouseLeave={endDrag}
+        >
+          <g transform={`translate(${t.x},${t.y}) scale(${t.k})`}>
         {/* arestas */}
         {links.map((l, i) => {
           const s = pos(l.source);
@@ -176,7 +241,33 @@ export default function NetworkView({
             </g>
           );
         })}
-      </svg>
+          </g>
+        </svg>
+
+        <div className="absolute bottom-3 right-3 flex flex-col gap-1">
+          <button
+            className="h-8 w-8 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
+            onClick={() => centerZoom(1.3)}
+            aria-label="Aproximar"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </button>
+          <button
+            className="h-8 w-8 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
+            onClick={() => centerZoom(1 / 1.3)}
+            aria-label="Afastar"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </button>
+          <button
+            className="h-8 w-8 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
+            onClick={() => setT({ k: 1, x: 0, y: 0 })}
+            aria-label="Ajustar à tela"
+          >
+            <Maximize className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

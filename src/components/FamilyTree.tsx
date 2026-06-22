@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import f3 from "family-chart";
 import "family-chart/styles/family-chart.css";
 import type { Person, Union } from "@/integrations/supabase/types";
-import { toFamilyChartData } from "@/lib/genealogy";
+import { toFamilyChartData, pickRootId } from "@/lib/genealogy";
 import { signedUrl } from "@/lib/storage";
 
 interface FamilyTreeProps {
@@ -64,7 +64,9 @@ export default function FamilyTree({
 
     const data = toFamilyChartData(people, unions, avatarUrls);
     const mainId =
-      focusId && data.some((d) => d.id === focusId) ? focusId : data[0]?.id;
+      focusId && data.some((d) => d.id === focusId)
+        ? focusId
+        : pickRootId(people, unions) ?? data[0]?.id;
 
     const chart: any = f3
       .createChart(el, data)
