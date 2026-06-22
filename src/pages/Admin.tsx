@@ -149,29 +149,38 @@ export default function Admin() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {active.map((m) => (
-                  <TableRow key={m.user_id}>
-                    <TableCell>
-                      <div className="font-medium">{m.display_name || "—"}</div>
-                      <div className="text-xs text-muted-foreground">{m.email || m.user_id}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Select value={m.role} onValueChange={(v) => changeRole(m, v as MemberRole)}>
-                        <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Administrador</SelectItem>
-                          <SelectItem value="editor">Editor</SelectItem>
-                          <SelectItem value="viewer">Visualizador</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(m)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {active.map((m) => {
+                  const isOwner = m.user_id === activeTree?.created_by;
+                  return (
+                    <TableRow key={m.user_id}>
+                      <TableCell>
+                        <div className="font-medium">{m.display_name || "—"}</div>
+                        <div className="text-xs text-muted-foreground">{m.email || m.user_id}</div>
+                      </TableCell>
+                      <TableCell>
+                        {isOwner ? (
+                          <Badge variant="secondary">Administrador (dono)</Badge>
+                        ) : (
+                          <Select value={m.role} onValueChange={(v) => changeRole(m, v as MemberRole)}>
+                            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="admin">Administrador</SelectItem>
+                              <SelectItem value="editor">Editor</SelectItem>
+                              <SelectItem value="viewer">Visualizador</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {!isOwner && (
+                          <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(m)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
                 {active.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
