@@ -216,6 +216,15 @@ export default function TreeView() {
             />
           </Suspense>
         )}
+
+        {canEdit && people.length > 0 && (
+          <Button
+            onClick={() => setCreating(true)}
+            className="absolute bottom-5 right-5 z-20 rounded-full h-12 px-5 shadow-flive"
+          >
+            <UserPlus className="h-5 w-5 mr-2" /> Adicionar pessoa
+          </Button>
+        )}
       </div>
 
       {/* Diálogos */}

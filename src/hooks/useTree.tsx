@@ -86,6 +86,22 @@ export function TreeProvider({ children }: { children: ReactNode }) {
     refreshTrees();
   }, [refreshTrees]);
 
+  // Reaplica o papel quando a aba volta ao foco (ex.: logo após o admin aprovar
+  // o acesso), habilitando a edição sem precisar recarregar a página.
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible" && user && activeTree) {
+        loadRole(activeTree.id, user.id);
+      }
+    }
+    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [user, activeTree, loadRole]);
+
   const setActiveTree = useCallback(
     (id: string) => {
       const t = trees.find((x) => x.id === id) ?? null;

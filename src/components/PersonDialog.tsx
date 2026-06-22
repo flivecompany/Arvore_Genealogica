@@ -42,7 +42,16 @@ import {
   deleteUnion,
   addMediaRecord,
   listMedia,
+  setPersonParent,
 } from "@/lib/people";
+
+type RelativeKind = "father" | "mother" | "spouse" | "child";
+const RELATIVE_LABEL: Record<RelativeKind, string> = {
+  father: "pai",
+  mother: "mãe",
+  spouse: "cônjuge",
+  child: "filho(a)",
+};
 import { uploadFile } from "@/lib/storage";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { useToast } from "@/hooks/use-toast";
@@ -74,10 +83,35 @@ export function PersonDialog({
 }: Props) {
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
+  const [addKind, setAddKind] = useState<RelativeKind | null>(null);
 
   useEffect(() => {
-    if (!open) setEditing(false);
+    if (!open) {
+      setEditing(false);
+      setAddKind(null);
+    }
   }, [open, person?.id]);
+
+  async function handleRelativeSaved(np: Person) {
+    if (!person) return;
+    try {
+      if (addKind === "father") await setPersonParent(person.id, "father", np.id);
+      else if (addKind === "mother") await setPersonParent(person.id, "mother", np.id);
+      else if (addKind === "spouse") await addUnion(treeId, person.id, np.id);
+      else if (addKind === "child")
+        await setPersonParent(np.id, person.sex === "female" ? "mother" : "father", person.id);
+      toast({ title: "Parente adicionado e vinculado." });
+    } catch (e) {
+      toast({
+        title: "Pessoa criada, mas falha ao vincular",
+        description: (e as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setAddKind(null);
+      onChanged();
+    }
+  }
 
   if (!person) return null;
 
@@ -138,6 +172,18 @@ export function PersonDialog({
             }}
             onCancel={() => setEditing(false)}
           />
+        ) : addKind ? (
+          <div className="space-y-3">
+            <div className="text-sm font-medium">
+              Adicionar {RELATIVE_LABEL[addKind]} de {fullName(person)}
+            </div>
+            <PersonForm
+              treeId={treeId}
+              people={people}
+              onSaved={handleRelativeSaved}
+              onCancel={() => setAddKind(null)}
+            />
+          </div>
         ) : (
           <Tabs defaultValue="info">
             <TabsList className="w-full">
@@ -198,7 +244,19 @@ export function PersonDialog({
               <Relations title="Irmãos" people={siblings} onNavigate={onNavigate} />
               <Relations title="Filhos" people={children} onNavigate={onNavigate} />
               {canEdit && (
-                <AddSpouse person={person} people={people} treeId={treeId} unions={unions} onChanged={onChanged} />
+                <div className="space-y-3 pt-2 border-t border-border">
+                  <div className="text-xs font-semibold text-muted-foreground">
+                    Adicionar parente (cria nova pessoa já vinculada)
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(["father", "mother", "spouse", "child"] as RelativeKind[]).map((k) => (
+                      <Button key={k} size="sm" variant="outline" onClick={() => setAddKind(k)}>
+                        <Plus className="h-4 w-4 mr-1" /> {RELATIVE_LABEL[k]}
+                      </Button>
+                    ))}
+                  </div>
+                  <AddSpouse person={person} people={people} treeId={treeId} unions={unions} onChanged={onChanged} />
+                </div>
               )}
             </TabsContent>
 
@@ -208,7 +266,7 @@ export function PersonDialog({
           </Tabs>
         )}
 
-        {!editing && canEdit && (
+        {!editing && !addKind && canEdit && (
           <div className="flex justify-between pt-2 border-t border-border">
             <Button variant="ghost" className="text-destructive" onClick={handleDelete}>
               <Trash2 className="h-4 w-4 mr-2" /> Remover
