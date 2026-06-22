@@ -7,6 +7,9 @@ import type {
   TreeStats,
   ShareLink,
   AuditEntry,
+  Member,
+  MemberRole,
+  InviteLink,
 } from "@/integrations/supabase/types";
 
 // ---------------------- Árvores ----------------------
@@ -174,6 +177,87 @@ export async function fetchSharedTree(
   });
   if (error) throw error;
   return data as { tree: Tree; people: Person[]; unions: Union[] } | null;
+}
+
+// ---------------------- Convites de edição (colaboração) ----------------------
+export async function createInviteLink(
+  treeId: string,
+  expiresAt?: string | null
+): Promise<InviteLink> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("genea_invite_links")
+    .insert({ tree_id: treeId, created_by: user?.id, expires_at: expiresAt ?? null })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as InviteLink;
+}
+
+export async function listInviteLinks(treeId: string): Promise<InviteLink[]> {
+  const { data, error } = await supabase
+    .from("genea_invite_links")
+    .select("*")
+    .eq("tree_id", treeId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as InviteLink[]) ?? [];
+}
+
+export async function revokeInviteLink(token: string): Promise<void> {
+  const { error } = await supabase
+    .from("genea_invite_links")
+    .update({ revoked: true })
+    .eq("token", token);
+  if (error) throw error;
+}
+
+export interface JoinResult {
+  status: "pending" | "member" | "invalid" | "unauthenticated";
+  tree_id?: string;
+  tree_name?: string;
+  role?: MemberRole;
+}
+
+export async function joinTree(token: string): Promise<JoinResult> {
+  const { data, error } = await supabase.rpc("genea_join_tree", { p_token: token });
+  if (error) throw error;
+  return data as JoinResult;
+}
+
+// ---------------------- Membros / aprovação ----------------------
+export async function listMembers(treeId: string): Promise<Member[]> {
+  const { data, error } = await supabase
+    .from("genea_members")
+    .select("*")
+    .eq("tree_id", treeId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data as Member[]) ?? [];
+}
+
+export async function setMemberRole(
+  treeId: string,
+  userId: string,
+  role: MemberRole
+): Promise<void> {
+  const { error } = await supabase
+    .from("genea_members")
+    .update({ role })
+    .eq("tree_id", treeId)
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+export async function removeMember(treeId: string, userId: string): Promise<void> {
+  const { error } = await supabase
+    .from("genea_members")
+    .delete()
+    .eq("tree_id", treeId)
+    .eq("user_id", userId);
+  if (error) throw error;
 }
 
 // ---------------------- Auditoria ----------------------

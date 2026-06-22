@@ -15,6 +15,7 @@ import People from "./pages/People";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import Shared from "./pages/Shared";
+import Convite from "./pages/Convite";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/compartilhar/:token" element={<Shared />} />
+              <Route path="/convite/:token" element={<Convite />} />
               <Route element={<RequireAuth />}>
                 <Route path="/arvore" element={<TreeView />} />
                 <Route path="/pessoas" element={<People />} />
