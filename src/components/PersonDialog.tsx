@@ -84,22 +84,36 @@ export function PersonDialog({
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
   const [addKind, setAddKind] = useState<RelativeKind | null>(null);
+  const [creatingNew, setCreatingNew] = useState(false);
+  const [linkSel, setLinkSel] = useState<string>("");
 
   useEffect(() => {
     if (!open) {
       setEditing(false);
       setAddKind(null);
+      setCreatingNew(false);
+      setLinkSel("");
     }
   }, [open, person?.id]);
 
-  async function handleRelativeSaved(np: Person) {
+  useEffect(() => {
+    setCreatingNew(false);
+    setLinkSel("");
+  }, [addKind]);
+
+  async function applyRelation(kind: RelativeKind, otherId: string) {
     if (!person) return;
+    if (kind === "father") await setPersonParent(person.id, "father", otherId);
+    else if (kind === "mother") await setPersonParent(person.id, "mother", otherId);
+    else if (kind === "spouse") await addUnion(treeId, person.id, otherId);
+    else if (kind === "child")
+      await setPersonParent(otherId, person.sex === "female" ? "mother" : "father", person.id);
+  }
+
+  async function handleRelativeSaved(np: Person) {
+    if (!person || !addKind) return;
     try {
-      if (addKind === "father") await setPersonParent(person.id, "father", np.id);
-      else if (addKind === "mother") await setPersonParent(person.id, "mother", np.id);
-      else if (addKind === "spouse") await addUnion(treeId, person.id, np.id);
-      else if (addKind === "child")
-        await setPersonParent(np.id, person.sex === "female" ? "mother" : "father", person.id);
+      await applyRelation(addKind, np.id);
       toast({ title: "Parente adicionado e vinculado." });
     } catch (e) {
       toast({
@@ -107,6 +121,19 @@ export function PersonDialog({
         description: (e as Error).message,
         variant: "destructive",
       });
+    } finally {
+      setAddKind(null);
+      onChanged();
+    }
+  }
+
+  async function linkExisting() {
+    if (!person || !addKind || !linkSel) return;
+    try {
+      await applyRelation(addKind, linkSel);
+      toast({ title: "Parente vinculado." });
+    } catch (e) {
+      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
     } finally {
       setAddKind(null);
       onChanged();
@@ -177,12 +204,53 @@ export function PersonDialog({
             <div className="text-sm font-medium">
               Adicionar {RELATIVE_LABEL[addKind]} de {fullName(person)}
             </div>
-            <PersonForm
-              treeId={treeId}
-              people={people}
-              onSaved={handleRelativeSaved}
-              onCancel={() => setAddKind(null)}
-            />
+            {creatingNew ? (
+              <PersonForm
+                treeId={treeId}
+                people={people}
+                onSaved={handleRelativeSaved}
+                onCancel={() => setCreatingNew(false)}
+              />
+            ) : (
+              <div className="space-y-2">
+                <div className="text-xs text-muted-foreground">
+                  Vincular uma pessoa <strong>já cadastrada</strong> como {RELATIVE_LABEL[addKind]}:
+                </div>
+                <div className="flex gap-2">
+                  <Select value={linkSel} onValueChange={setLinkSel}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Escolher pessoa existente..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {people
+                        .filter((p) => p.id !== person.id)
+                        .filter((p) =>
+                          addKind === "father"
+                            ? p.sex !== "female"
+                            : addKind === "mother"
+                            ? p.sex !== "male"
+                            : true
+                        )
+                        .map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {fullName(p)}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={linkExisting} disabled={!linkSel}>
+                    Vincular
+                  </Button>
+                </div>
+                <div className="text-center text-xs text-muted-foreground py-1">— ou —</div>
+                <Button variant="outline" className="w-full" onClick={() => setCreatingNew(true)}>
+                  <Plus className="h-4 w-4 mr-1" /> Cadastrar pessoa nova
+                </Button>
+                <Button variant="ghost" className="w-full" onClick={() => setAddKind(null)}>
+                  Cancelar
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <Tabs defaultValue="info">
@@ -246,7 +314,7 @@ export function PersonDialog({
               {canEdit && (
                 <div className="space-y-3 pt-2 border-t border-border">
                   <div className="text-xs font-semibold text-muted-foreground">
-                    Adicionar parente (cria nova pessoa já vinculada)
+                    Adicionar parente (vincular já existente ou cadastrar nova)
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {(["father", "mother", "spouse", "child"] as RelativeKind[]).map((k) => (
@@ -255,7 +323,6 @@ export function PersonDialog({
                       </Button>
                     ))}
                   </div>
-                  <AddSpouse person={person} people={people} treeId={treeId} unions={unions} onChanged={onChanged} />
                 </div>
               )}
             </TabsContent>
