@@ -13,6 +13,7 @@ import type {
   AppNotification,
   GlobalPersonMatch,
   LinkRequest,
+  PendingConsent,
 } from "@/integrations/supabase/types";
 
 // ---------------------- Árvores ----------------------
@@ -354,6 +355,30 @@ export async function resolveLinkRequest(id: number, approve: boolean): Promise<
   const { error } = await supabase.rpc("genea_resolve_link_request", {
     p_request: id,
     p_approve: approve,
+  });
+  if (error) throw error;
+}
+
+// ---------------------- Consentimento por e-mail ----------------------
+/** Anuncia a pessoa (após salvar com e-mail): notifica o usuário, se existir. */
+export async function announcePerson(personId: string): Promise<void> {
+  const { error } = await supabase.rpc("genea_announce_person", {
+    p_person: personId,
+  });
+  // RPC pode não existir ainda (migration não aplicada) — ignora silenciosamente.
+  if (error && import.meta.env.DEV) console.warn("announcePerson:", error.message);
+}
+
+export async function listMyPendingConsents(): Promise<PendingConsent[]> {
+  const { data, error } = await supabase.rpc("genea_my_pending_consents");
+  if (error) return [];
+  return (data as PendingConsent[]) ?? [];
+}
+
+export async function resolveConsent(id: number, accept: boolean): Promise<void> {
+  const { error } = await supabase.rpc("genea_resolve_consent", {
+    p_id: id,
+    p_accept: accept,
   });
   if (error) throw error;
 }

@@ -22,6 +22,7 @@ import {
   upsertPerson,
   searchGlobalPeople,
   requestPersonLink,
+  announcePerson,
   type PersonInput,
 } from "@/lib/people";
 import { uploadFile } from "@/lib/storage";
@@ -64,6 +65,7 @@ export function PersonForm({ treeId, people, initial, onSaved, onCancel }: Props
     father_id: initial?.father_id ?? null,
     mother_id: initial?.mother_id ?? null,
     occupation: initial?.occupation ?? "",
+    email: initial?.email ?? "",
     biography: initial?.biography ?? "",
     notes: initial?.notes ?? "",
     avatar_url: initial?.avatar_url ?? null,
@@ -161,6 +163,9 @@ export function PersonForm({ treeId, people, initial, onSaved, onCancel }: Props
         mother_id: form.mother_id || null,
       };
       const saved = await upsertPerson(payload);
+      if (saved && form.email?.trim()) {
+        await announcePerson(saved.id);
+      }
       toast({ title: "Registro salvo." });
       onSaved(saved);
     } catch (e) {
@@ -320,9 +325,23 @@ export function PersonForm({ treeId, people, initial, onSaved, onCancel }: Props
       </div>
 
       {/* Perfil */}
-      <Field label="Profissão">
-        <Input value={form.occupation ?? ""} onChange={(e) => set("occupation", e.target.value)} />
-      </Field>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Field label="Profissão">
+          <Input value={form.occupation ?? ""} onChange={(e) => set("occupation", e.target.value)} />
+        </Field>
+        <Field label="E-mail (opcional)">
+          <Input
+            type="email"
+            value={form.email ?? ""}
+            onChange={(e) => set("email", e.target.value)}
+            placeholder="email@exemplo.com"
+          />
+        </Field>
+      </div>
+      <p className="text-[11px] text-muted-foreground -mt-2">
+        Se a pessoa tiver conta no sistema, ela é avisada e poderá confirmar se aceita
+        participar desta árvore.
+      </p>
       <Field label="Biografia">
         <Textarea rows={3} value={form.biography ?? ""} onChange={(e) => set("biography", e.target.value)} />
       </Field>

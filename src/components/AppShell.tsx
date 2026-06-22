@@ -13,6 +13,7 @@ import {
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { NotificationBell } from "./NotificationBell";
+import { ConsentPrompt } from "./ConsentPrompt";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -148,6 +149,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <main className={cn("flex-1 w-full")}>{children}</main>
+      <ConsentPrompt />
     </div>
   );
 }
