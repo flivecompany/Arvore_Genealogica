@@ -28,7 +28,14 @@ import {
 } from "@/components/ui/dialog";
 import { useTree } from "@/hooks/useTree";
 import { useTreeData } from "@/hooks/useTreeData";
-import { fullName, ancestorsOf, descendantsOf } from "@/lib/genealogy";
+import { fullName, ancestorsOf, descendantsOf, connectedGroups } from "@/lib/genealogy";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { exportPdf, exportPng, downloadGedcom } from "@/lib/exporters";
 import { useToast } from "@/hooks/use-toast";
 import type { Person } from "@/integrations/supabase/types";
@@ -57,6 +64,8 @@ export default function TreeView() {
       .filter((p) => fullName(p).toLowerCase().includes(q))
       .slice(0, 8);
   }, [search, people]);
+
+  const groups = useMemo(() => connectedGroups(people, unions), [people, unions]);
 
   const highlight = useMemo(() => {
     if (hlMode !== "none" && focusId) {
@@ -159,6 +168,24 @@ export default function TreeView() {
         </div>
 
         {view === "tree" && (
+          <>
+            {groups.length > 1 && (
+              <Select
+                value={focusId ?? groups[0]?.rootId}
+                onValueChange={(v) => { setFocusId(v); setHlMode("none"); }}
+              >
+                <SelectTrigger className="h-9 w-[210px] text-xs">
+                  <SelectValue placeholder="Grupo familiar" />
+                </SelectTrigger>
+                <SelectContent>
+                  {groups.map((g) => (
+                    <SelectItem key={g.rootId} value={g.rootId}>
+                      {g.label} ({g.size})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           <div className="flex items-center gap-1">
             <Button
               variant={hlMode === "ancestors" ? "secondary" : "ghost"}
@@ -182,6 +209,7 @@ export default function TreeView() {
               </Button>
             )}
           </div>
+          </>
         )}
 
         <div className="ml-auto flex items-center gap-1">
