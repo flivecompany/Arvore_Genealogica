@@ -66,9 +66,26 @@ export interface FamilyChartNode {
   };
 }
 
+// Avatar de fallback (iniciais sobre cor por sexo) como data-URI SVG,
+// evitando o ícone de "imagem quebrada" quando não há foto.
+export function avatarPlaceholder(
+  p: Pick<Person, "first_name" | "last_name" | "sex">
+): string {
+  const bg = p.sex === "female" ? "#fd4817" : p.sex === "male" ? "#1498d5" : "#64748b";
+  const text = initials(p);
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'>` +
+    `<rect width='120' height='120' fill='${bg}'/>` +
+    `<text x='60' y='62' font-size='46' fill='#ffffff' text-anchor='middle' ` +
+    `dominant-baseline='central' font-family='Inter,Arial,sans-serif' ` +
+    `font-weight='600'>${text}</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 export function toFamilyChartData(
   people: Person[],
-  unions: Union[]
+  unions: Union[],
+  avatarUrls?: Map<string, string>
 ): FamilyChartNode[] {
   const byId = new Map(people.map((p) => [p.id, p]));
   const childrenOf = new Map<string, Set<string>>();
@@ -99,7 +116,7 @@ export function toFamilyChartData(
         "first name": p.first_name,
         "last name": p.last_name ?? "",
         gender: p.sex === "female" ? "F" : "M",
-        avatar: p.avatar_url ?? undefined,
+        avatar: avatarUrls?.get(p.id) || avatarPlaceholder(p),
         birthday: lifeSpan(p),
         label: fullName(p),
         deceased: p.is_living ? undefined : "1",

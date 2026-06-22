@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import f3 from "family-chart";
 import "family-chart/styles/family-chart.css";
 import type { Person, Union } from "@/integrations/supabase/types";
 import { toFamilyChartData } from "@/lib/genealogy";
+import { signedUrl } from "@/lib/storage";
 
 interface FamilyTreeProps {
   people: Person[];
@@ -32,6 +33,28 @@ export default function FamilyTree({
   const chartRef = useRef<any>(null);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
+  const [avatarUrls, setAvatarUrls] = useState<Map<string, string>>(new Map());
+
+  // Resolve URLs (assinadas) das fotos do Storage; sem foto usa-se o placeholder.
+  useEffect(() => {
+    let active = true;
+    const withPhotos = people.filter((p) => p.avatar_url);
+    if (withPhotos.length === 0) {
+      setAvatarUrls((prev) => (prev.size ? new Map() : prev));
+      return;
+    }
+    Promise.all(
+      withPhotos.map(async (p) => [p.id, await signedUrl(p.avatar_url!)] as const)
+    ).then((entries) => {
+      if (!active) return;
+      const m = new Map<string, string>();
+      for (const [id, url] of entries) if (url) m.set(id, url);
+      setAvatarUrls(m);
+    });
+    return () => {
+      active = false;
+    };
+  }, [people]);
 
   // (Re)cria o gráfico quando os dados mudam.
   useEffect(() => {
@@ -39,7 +62,7 @@ export default function FamilyTree({
     if (!el || people.length === 0) return;
     el.innerHTML = "";
 
-    const data = toFamilyChartData(people, unions);
+    const data = toFamilyChartData(people, unions, avatarUrls);
     const mainId =
       focusId && data.some((d) => d.id === focusId) ? focusId : data[0]?.id;
 
@@ -77,7 +100,7 @@ export default function FamilyTree({
       chartRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [people, unions]);
+  }, [people, unions, avatarUrls]);
 
   // Recentraliza quando focusId muda externamente (busca).
   useEffect(() => {
