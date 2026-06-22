@@ -171,6 +171,68 @@ export function descendantsOf(id: string, people: Person[]): Set<string> {
   return out;
 }
 
+/**
+ * Escolhe a melhor pessoa para ser a raiz visual do organograma: o ancestral
+ * do topo (sem pais) do MAIOR grupo conectado, com mais descendentes.
+ */
+export function pickRootId(people: Person[], unions: Union[]): string | null {
+  if (people.length === 0) return null;
+  const byId = new Set(people.map((p) => p.id));
+  const adj = new Map<string, Set<string>>();
+  const link = (a: string, b: string) => {
+    if (!adj.has(a)) adj.set(a, new Set());
+    adj.get(a)!.add(b);
+  };
+  for (const p of people) {
+    for (const par of [p.father_id, p.mother_id]) {
+      if (par && byId.has(par)) {
+        link(p.id, par);
+        link(par, p.id);
+      }
+    }
+  }
+  for (const u of unions) {
+    if (byId.has(u.partner1_id) && byId.has(u.partner2_id)) {
+      link(u.partner1_id, u.partner2_id);
+      link(u.partner2_id, u.partner1_id);
+    }
+  }
+
+  const seen = new Set<string>();
+  let best: string[] = [];
+  for (const p of people) {
+    if (seen.has(p.id)) continue;
+    const comp: string[] = [];
+    const stack = [p.id];
+    while (stack.length) {
+      const c = stack.pop()!;
+      if (seen.has(c)) continue;
+      seen.add(c);
+      comp.push(c);
+      for (const n of adj.get(c) ?? []) if (!seen.has(n)) stack.push(n);
+    }
+    if (comp.length > best.length) best = comp;
+  }
+
+  const peopleById = new Map(people.map((p) => [p.id, p]));
+  const roots = best.filter((id) => {
+    const p = peopleById.get(id);
+    return p && !p.father_id && !p.mother_id;
+  });
+  const pool = roots.length ? roots : best;
+
+  let bestId = pool[0];
+  let bestCount = -1;
+  for (const id of pool) {
+    const c = descendantsOf(id, people).size;
+    if (c > bestCount) {
+      bestCount = c;
+      bestId = id;
+    }
+  }
+  return bestId;
+}
+
 // ---------------------------------------------------------------------------
 // Grau de parentesco (em pt-BR) entre `root` e `target`
 // ---------------------------------------------------------------------------
