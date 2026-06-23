@@ -188,6 +188,17 @@ export interface Superadmin {
   created_at: string;
 }
 
+export interface AccessStats {
+  total: number;
+  today: number;
+  last7: number;
+  last30: number;
+  unique_total: number;
+  unique_today: number;
+  series: { day: string; accesses: number; users: number }[];
+  top_users: { email: string | null; accesses: number; last_at: string }[];
+}
+
 export interface TreeStats {
   people: number;
   living: number;

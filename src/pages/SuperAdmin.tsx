@@ -13,6 +13,9 @@ import {
   Plus,
   Save,
   Loader2,
+  Activity,
+  CalendarDays,
+  UserCheck,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,8 +32,14 @@ import {
   updatePlatformSettings,
   listSuperadmins,
   setSuperadmin,
+  getAccessStats,
 } from "@/lib/superadmin";
-import type { PlatformSettings, PlatformStats, Superadmin } from "@/integrations/supabase/types";
+import type {
+  PlatformSettings,
+  PlatformStats,
+  Superadmin,
+  AccessStats,
+} from "@/integrations/supabase/types";
 
 export default function SuperAdmin() {
   const { toast } = useToast();
@@ -44,6 +53,8 @@ export default function SuperAdmin() {
   const [supers, setSupers] = useState<Superadmin[]>([]);
   const [saving, setSaving] = useState(false);
   const [newEmail, setNewEmail] = useState("");
+  const [access, setAccess] = useState<AccessStats | null>(null);
+  const [days, setDays] = useState(30);
 
   useEffect(() => {
     if (!isSuper) return;
@@ -51,6 +62,11 @@ export default function SuperAdmin() {
     getPlatformSettings().then(setSettings).catch(() => {});
     listSuperadmins().then(setSupers).catch(() => {});
   }, [isSuper]);
+
+  useEffect(() => {
+    if (!isSuper) return;
+    getAccessStats(days).then(setAccess).catch(() => {});
+  }, [isSuper, days]);
 
   if (checking) {
     return (
@@ -146,6 +162,83 @@ export default function SuperAdmin() {
         </div>
       </section>
 
+      {/* Estatísticas de acesso */}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1">
+            <Activity className="h-4 w-4" /> Acessos à plataforma
+          </h2>
+          <div className="flex items-center rounded-md border border-border overflow-hidden">
+            {[7, 30, 90].map((d) => (
+              <button
+                key={d}
+                onClick={() => setDays(d)}
+                className={
+                  "px-2.5 py-1 text-xs " +
+                  (days === d ? "bg-secondary font-medium" : "hover:bg-secondary/50")
+                }
+              >
+                {d}d
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {[
+            { label: "Hoje", value: access?.today, icon: Activity },
+            { label: "Últimos 7 dias", value: access?.last7, icon: CalendarDays },
+            { label: "Últimos 30 dias", value: access?.last30, icon: CalendarDays },
+            { label: "Usuários únicos", value: access?.unique_total, icon: UserCheck },
+          ].map((m) => {
+            const Icon = m.icon;
+            return (
+              <Card key={m.label} className="p-3 text-center">
+                <Icon className="h-4 w-4 mx-auto text-primary" />
+                <div className="text-xl font-bold tabular-nums">{m.value ?? "—"}</div>
+                <div className="text-[11px] text-muted-foreground">{m.label}</div>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Gráfico de barras: acessos por dia */}
+        <Card className="p-4">
+          <div className="text-xs text-muted-foreground mb-2">
+            Acessos por dia (últimos {days} dias)
+          </div>
+          {access && access.series.length > 0 ? (
+            <AccessBars series={access.series} />
+          ) : (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              Sem registros de acesso ainda.
+            </p>
+          )}
+        </Card>
+
+        {/* Top usuários */}
+        <Card className="p-4 space-y-2">
+          <div className="text-xs font-medium text-muted-foreground">
+            Usuários mais ativos ({days} dias)
+          </div>
+          {access && access.top_users.length > 0 ? (
+            access.top_users.map((u) => (
+              <div key={u.email ?? "?"} className="flex items-center justify-between gap-2 text-sm">
+                <span className="truncate">{u.email ?? "—"}</span>
+                <span className="flex items-center gap-3 shrink-0 text-muted-foreground">
+                  <span className="text-foreground font-medium tabular-nums">{u.accesses}</span>
+                  <span className="text-xs whitespace-nowrap">
+                    {new Date(u.last_at).toLocaleDateString("pt-BR")}
+                  </span>
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">Nenhum acesso no período.</p>
+          )}
+        </Card>
+      </section>
+
       {/* Configurações globais */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-muted-foreground">Configurações da plataforma</h2>
@@ -236,6 +329,32 @@ export default function SuperAdmin() {
           </div>
         </Card>
       </section>
+    </div>
+  );
+}
+
+/** Gráfico de barras simples (CSS) dos acessos por dia. */
+function AccessBars({ series }: { series: AccessStats["series"] }) {
+  const max = Math.max(1, ...series.map((s) => s.accesses));
+  const step = Math.ceil(series.length / 8); // ~8 rótulos no eixo X
+  return (
+    <div className="flex items-end gap-[2px] h-32">
+      {series.map((s, i) => {
+        const d = new Date(s.day + "T00:00:00");
+        const label = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+        return (
+          <div key={s.day} className="flex-1 h-full flex flex-col justify-end items-center group">
+            <div
+              className="w-full rounded-t bg-primary/80 group-hover:bg-primary transition-colors min-h-[2px]"
+              style={{ height: `${(s.accesses / max) * 100}%` }}
+              title={`${label}: ${s.accesses} acesso(s) · ${s.users} usuário(s)`}
+            />
+            <span className="mt-1 text-[8px] text-muted-foreground h-3 leading-3">
+              {i % step === 0 ? label : ""}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

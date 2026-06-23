@@ -3,10 +3,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { TreeProvider } from "./hooks/useTree";
 import { AppShell } from "./components/AppShell";
+import { recordAccess } from "./lib/superadmin";
 
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -24,6 +26,15 @@ const queryClient = new QueryClient();
 
 function RequireAuth() {
   const { user, isLoading } = useAuth();
+
+  // Registra o acesso uma vez por sessão (o servidor ainda faz throttle de 15 min).
+  useEffect(() => {
+    if (!user) return;
+    if (sessionStorage.getItem("genea_access_logged")) return;
+    sessionStorage.setItem("genea_access_logged", "1");
+    recordAccess(window.location.pathname);
+  }, [user]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
