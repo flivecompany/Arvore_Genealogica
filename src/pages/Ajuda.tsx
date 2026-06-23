@@ -133,8 +133,8 @@ export default function Ajuda() {
               Borda azul = sexo <strong>masculino</strong>
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-block w-5 h-5 rounded border-2" style={{ borderColor: "#fd4817" }} />
-              Borda laranja = sexo <strong>feminino</strong>
+              <span className="inline-block w-5 h-5 rounded border-2" style={{ borderColor: "#e6378f" }} />
+              Borda rosa = sexo <strong>feminino</strong>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary">falecido(a)</Badge>

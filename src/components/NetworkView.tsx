@@ -23,7 +23,7 @@ interface GLink {
 
 const SEX_COLOR: Record<string, string> = {
   male: "#1498d5",
-  female: "#fd4817",
+  female: "#e6378f",
   other: "#64748b",
 };
 
@@ -223,7 +223,7 @@ export default function NetworkView({
             <line
               key={i}
               x1={s.x} y1={s.y} x2={t.x} y2={t.y}
-              stroke={l.kind === "spouse" ? "#fd4817" : "#94a3b8"}
+              stroke={l.kind === "spouse" ? "#e6378f" : "#94a3b8"}
               strokeWidth={1.5}
               strokeDasharray={l.kind === "spouse" ? "5 4" : undefined}
               opacity={0.7}
