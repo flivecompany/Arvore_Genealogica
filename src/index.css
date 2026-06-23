@@ -50,7 +50,7 @@
 
     /* Sexo (ícones / bordas de cartão) */
     --male: 199 83% 46%;
-    --female: 13 96% 54%;
+    --female: 330 78% 56%;
 
     --gradient-flive: linear-gradient(135deg, hsl(199 83% 46%) 0%, hsl(13 96% 54%) 100%);
     --gradient-subtle: linear-gradient(180deg, hsl(210 40% 98%) 0%, hsl(210 36% 95%) 100%);
@@ -86,7 +86,7 @@
     --ring: 199 83% 52%;
 
     --male: 199 83% 60%;
-    --female: 13 96% 62%;
+    --female: 330 80% 66%;
 
     --gradient-subtle: linear-gradient(180deg, hsl(222 38% 8%) 0%, hsl(222 33% 12%) 100%);
     --shadow-card: 0 2px 14px -4px hsl(222 60% 2% / 0.6);

@@ -91,7 +91,7 @@ export interface FamilyChartNode {
 export function avatarPlaceholder(
   p: Pick<Person, "first_name" | "last_name" | "sex">
 ): string {
-  const bg = p.sex === "female" ? "#fd4817" : p.sex === "male" ? "#1498d5" : "#64748b";
+  const bg = p.sex === "female" ? "#e6378f" : p.sex === "male" ? "#1498d5" : "#64748b";
   const text = initials(p);
   const svg =
     `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'>` +

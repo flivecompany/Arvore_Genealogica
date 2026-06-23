@@ -23,7 +23,7 @@ interface GLink {
 
 const SEX_COLOR: Record<string, string> = {
   male: "#1498d5",
-  female: "#fd4817",
+  female: "#e6378f",
   other: "#64748b",
 };
 
@@ -223,7 +223,7 @@ export default function NetworkView({
             <line
               key={i}
               x1={s.x} y1={s.y} x2={t.x} y2={t.y}
-              stroke={l.kind === "spouse" ? "#fd4817" : "#94a3b8"}
+              stroke={l.kind === "spouse" ? "#e6378f" : "#94a3b8"}
               strokeWidth={1.5}
               strokeDasharray={l.kind === "spouse" ? "5 4" : undefined}
               opacity={0.7}
@@ -283,18 +283,18 @@ export default function NetworkView({
 
         <div className="absolute bottom-3 right-3 flex flex-col items-stretch gap-1">
           <button
-            className="h-8 w-8 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
+            className="h-8 w-8 grid place-items-center rounded-md border border-primary bg-primary text-primary-foreground shadow hover:bg-primary/90"
             onClick={() => centerZoom(1.3)}
             aria-label="Aproximar"
             title="Aproximar"
           >
             <ZoomIn className="h-4 w-4" />
           </button>
-          <div className="h-6 grid place-items-center rounded-md border border-border bg-background/90 text-[10px] font-medium text-muted-foreground tabular-nums">
+          <div className="h-6 grid place-items-center rounded-md border border-primary/40 bg-background/90 text-[10px] font-semibold text-primary tabular-nums">
             {Math.round(t.k * 100)}%
           </div>
           <button
-            className="h-8 w-8 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
+            className="h-8 w-8 grid place-items-center rounded-md border border-primary bg-primary text-primary-foreground shadow hover:bg-primary/90"
             onClick={() => centerZoom(1 / 1.3)}
             aria-label="Afastar"
             title="Afastar"
@@ -302,7 +302,7 @@ export default function NetworkView({
             <ZoomOut className="h-4 w-4" />
           </button>
           <button
-            className="h-8 w-8 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
+            className="h-8 w-8 grid place-items-center rounded-md border border-primary bg-primary text-primary-foreground shadow hover:bg-primary/90"
             onClick={fitAll}
             aria-label="Ajustar tudo à tela"
             title="Ajustar tudo à tela"
@@ -310,7 +310,7 @@ export default function NetworkView({
             <Maximize className="h-4 w-4" />
           </button>
           <button
-            className="h-8 w-8 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+            className="h-8 w-8 grid place-items-center rounded-md border border-primary bg-primary text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={() => frameNodes(connectedIds)}
             disabled={connectedIds.length === 0}
             aria-label="Focar na rede conectada"
@@ -319,7 +319,7 @@ export default function NetworkView({
             <Locate className="h-4 w-4" />
           </button>
           <button
-            className="relative h-8 w-8 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+            className="relative h-8 w-8 grid place-items-center rounded-md border border-primary bg-primary text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={locateDisconnected}
             disabled={discIds.length === 0}
             aria-label="Localizar próxima pessoa desconectada"

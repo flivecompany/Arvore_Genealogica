@@ -324,7 +324,7 @@ export default function TreeView() {
         {canEdit && people.length > 0 && (
           <Button
             onClick={() => setCreating(true)}
-            className="hidden md:inline-flex absolute bottom-5 right-5 z-20 rounded-full h-12 px-5 shadow-flive"
+            className="absolute bottom-5 left-5 z-20 rounded-full h-12 px-5 shadow-flive"
           >
             <UserPlus className="h-5 w-5 mr-2" /> Adicionar pessoa
           </Button>
