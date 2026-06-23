@@ -3,6 +3,7 @@ import type {
   PlatformSettings,
   PlatformStats,
   Superadmin,
+  AccessStats,
 } from "@/integrations/supabase/types";
 
 /** O usuário atual é superadmin da plataforma? (resiliente se a RPC não existir) */
@@ -63,4 +64,21 @@ export async function setSuperadmin(email: string, grant: boolean): Promise<void
     p_grant: grant,
   });
   if (error) throw error;
+}
+
+// ---------------------- Estatísticas de acesso ----------------------
+/** Registra um acesso (com throttle no servidor). Resiliente: ignora erros. */
+export async function recordAccess(path?: string): Promise<void> {
+  try {
+    await supabase.rpc("genea_record_access", { p_path: path ?? null });
+  } catch {
+    /* migration pode não existir ainda — silencioso */
+  }
+}
+
+/** Estatísticas de acesso (somente superadmin). */
+export async function getAccessStats(days = 30): Promise<AccessStats | null> {
+  const { data, error } = await supabase.rpc("genea_access_stats", { p_days: days });
+  if (error) throw error;
+  return (data as AccessStats) ?? null;
 }
