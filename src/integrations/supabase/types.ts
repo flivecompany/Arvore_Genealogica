@@ -4,6 +4,13 @@
 export type Sex = "male" | "female" | "other";
 export type MemberRole = "admin" | "editor" | "viewer" | "pending";
 export type MediaKind = "photo" | "document" | "other";
+/** Situação do vínculo entre o casal. */
+export type UnionStatus =
+  | "married"
+  | "partners"
+  | "separated"
+  | "divorced"
+  | "widowed";
 
 export interface SocialLink {
   label: string;
@@ -44,6 +51,7 @@ export interface Union {
   partner1_id: string;
   partner2_id: string;
   kind: string;
+  status: UnionStatus;
   started_on: string | null;
   ended_on: string | null;
   place: string | null;

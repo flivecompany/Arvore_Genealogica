@@ -128,6 +128,9 @@
   background: transparent;
   width: 100%;
   height: 100%;
+  /* Gestos de toque (arrastar/pinçar) controlam o organograma em vez de
+     rolar a página no celular. */
+  touch-action: none;
 }
 .f3 .card_cont { cursor: pointer; }
 .f3 .link { fill: none; stroke: hsl(var(--border)); stroke-width: 1.5px; }

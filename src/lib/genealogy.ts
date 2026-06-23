@@ -1,4 +1,24 @@
-import type { Person, Union } from "@/integrations/supabase/types";
+import type { Person, Union, UnionStatus } from "@/integrations/supabase/types";
+
+/** Rótulo da situação da união, em pt-BR. */
+export const UNION_STATUS_LABEL: Record<UnionStatus, string> = {
+  married: "Casado(a)",
+  partners: "União estável",
+  separated: "Separado(a)",
+  divorced: "Divorciado(a)",
+  widowed: "Viúvo(a)",
+};
+
+/** Situações que indicam vínculo encerrado (ex-cônjuge). */
+export const FORMER_UNION_STATUSES: ReadonlySet<UnionStatus> = new Set<UnionStatus>([
+  "separated",
+  "divorced",
+  "widowed",
+]);
+
+export function isFormerUnion(u: Pick<Union, "status">): boolean {
+  return FORMER_UNION_STATUSES.has(u.status);
+}
 
 /** Nome completo legível. */
 export function fullName(p: Pick<Person, "first_name" | "last_name">): string {

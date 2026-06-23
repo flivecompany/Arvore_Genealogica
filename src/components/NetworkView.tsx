@@ -7,7 +7,7 @@ import {
   forceCollide,
   type SimulationNodeDatum,
 } from "d3-force";
-import { ZoomIn, ZoomOut, Maximize } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize, Locate, Crosshair } from "lucide-react";
 import type { Person, Union } from "@/integrations/supabase/types";
 import { fullName, initials } from "@/lib/genealogy";
 
@@ -44,6 +44,7 @@ export default function NetworkView({
   const svgRef = useRef<SVGSVGElement>(null);
   const [t, setT] = useState({ k: 1, x: 0, y: 0 });
   const drag = useRef<{ x: number; y: number } | null>(null);
+  const discIdx = useRef(0);
 
   // Converte coordenadas de tela para coordenadas do viewBox.
   function toView(clientX: number, clientY: number) {
@@ -94,7 +95,8 @@ export default function NetworkView({
     zoomAt(r.left + r.width / 2, r.top + r.height / 2, factor);
   }
 
-  const { nodes, links, degree, viewBox, disconnected } = useMemo(() => {
+  const { nodes, links, degree, viewBox, vb, disconnected, discIds, connectedIds, nodeById } =
+    useMemo(() => {
     const byId = new Set(people.map((p) => p.id));
     const nodes: GNode[] = people.map((p) => ({ id: p.id, p }));
     const links: GLink[] = [];
@@ -141,12 +143,47 @@ export default function NetworkView({
     }
     const pad = 80;
     if (!isFinite(minX)) { minX = -100; minY = -100; maxX = 100; maxY = 100; }
-    const viewBox = `${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`;
-    const disconnected = [...degree.values()].filter((d) => d === 0).length;
-    return { nodes, links, degree, viewBox, disconnected };
+    const vb = { x: minX - pad, y: minY - pad, w: maxX - minX + pad * 2, h: maxY - minY + pad * 2 };
+    const viewBox = `${vb.x} ${vb.y} ${vb.w} ${vb.h}`;
+    const discIds = nodes.filter((n) => (degree.get(n.id) ?? 0) === 0).map((n) => n.id);
+    const connectedIds = nodes.filter((n) => (degree.get(n.id) ?? 0) > 0).map((n) => n.id);
+    const nodeById = new Map(nodes.map((n) => [n.id, n]));
+    return {
+      nodes, links, degree, viewBox, vb,
+      disconnected: discIds.length, discIds, connectedIds, nodeById,
+    };
   }, [people, unions]);
 
   const pos = (n: string | GNode) => (typeof n === "string" ? null : n);
+
+  // Enquadra um conjunto de nós no centro da tela, calculando o zoom ideal.
+  function frameNodes(ids: string[], maxK = 5) {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const id of ids) {
+      const n = nodeById.get(id);
+      if (!n) continue;
+      x0 = Math.min(x0, n.x ?? 0); y0 = Math.min(y0, n.y ?? 0);
+      x1 = Math.max(x1, n.x ?? 0); y1 = Math.max(y1, n.y ?? 0);
+    }
+    if (!isFinite(x0)) return;
+    const bw = Math.max(x1 - x0, 140);
+    const bh = Math.max(y1 - y0, 140);
+    const k = Math.min(maxK, Math.max(0.15, Math.min((vb.w * 0.82) / bw, (vb.h * 0.82) / bh)));
+    const bcx = (x0 + x1) / 2, bcy = (y0 + y1) / 2;
+    setT({ k, x: vb.x + vb.w / 2 - k * bcx, y: vb.y + vb.h / 2 - k * bcy });
+  }
+
+  // "Ajustar tudo": o viewBox já enquadra todos os nós, então basta resetar.
+  const fitAll = () => setT({ k: 1, x: 0, y: 0 });
+
+  // Percorre as pessoas desconectadas, uma a uma, aproximando em cada.
+  function locateDisconnected() {
+    if (discIds.length === 0) return;
+    const id = discIds[discIdx.current % discIds.length];
+    discIdx.current = (discIdx.current + 1) % discIds.length;
+    setHover(id);
+    frameNodes([id], 3);
+  }
 
   return (
     <div className="absolute inset-0 flex flex-col">
@@ -244,27 +281,56 @@ export default function NetworkView({
           </g>
         </svg>
 
-        <div className="absolute bottom-3 right-3 flex flex-col gap-1">
+        <div className="absolute bottom-3 right-3 flex flex-col items-stretch gap-1">
           <button
             className="h-8 w-8 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
             onClick={() => centerZoom(1.3)}
             aria-label="Aproximar"
+            title="Aproximar"
           >
             <ZoomIn className="h-4 w-4" />
           </button>
+          <div className="h-6 grid place-items-center rounded-md border border-border bg-background/90 text-[10px] font-medium text-muted-foreground tabular-nums">
+            {Math.round(t.k * 100)}%
+          </div>
           <button
             className="h-8 w-8 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
             onClick={() => centerZoom(1 / 1.3)}
             aria-label="Afastar"
+            title="Afastar"
           >
             <ZoomOut className="h-4 w-4" />
           </button>
           <button
             className="h-8 w-8 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
-            onClick={() => setT({ k: 1, x: 0, y: 0 })}
-            aria-label="Ajustar à tela"
+            onClick={fitAll}
+            aria-label="Ajustar tudo à tela"
+            title="Ajustar tudo à tela"
           >
             <Maximize className="h-4 w-4" />
+          </button>
+          <button
+            className="h-8 w-8 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={() => frameNodes(connectedIds)}
+            disabled={connectedIds.length === 0}
+            aria-label="Focar na rede conectada"
+            title="Focar na rede conectada"
+          >
+            <Locate className="h-4 w-4" />
+          </button>
+          <button
+            className="relative h-8 w-8 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={locateDisconnected}
+            disabled={discIds.length === 0}
+            aria-label="Localizar próxima pessoa desconectada"
+            title="Localizar próxima pessoa desconectada"
+          >
+            <Crosshair className="h-4 w-4 text-warning" />
+            {discIds.length > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 grid place-items-center rounded-full bg-warning text-[9px] font-bold text-warning-foreground">
+                {discIds.length}
+              </span>
+            )}
           </button>
         </div>
       </div>

@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Plus,
   HelpCircle,
+  User,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
@@ -108,8 +109,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="max-w-[160px]">
-                  <span className="truncate">{user?.email}</span>
+                <Button variant="ghost" size="sm" className="max-w-[160px] px-2">
+                  <User className="h-4 w-4 sm:hidden" />
+                  <span className="hidden sm:inline truncate">{user?.email}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -124,31 +126,33 @@ export function AppShell({ children }: { children: ReactNode }) {
             </DropdownMenu>
           </div>
         </div>
+      </header>
 
-        {/* Nav mobile */}
-        <nav className="md:hidden flex items-center gap-1 overflow-x-auto px-4 pb-2">
-          {NAV.map((item) => {
+      <main className={cn("flex-1 w-full pb-16 md:pb-0")}>{children}</main>
+
+      {/* Barra de navegação inferior (mobile) — estilo aplicativo */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 flex items-stretch border-t border-border bg-background/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+        {[...NAV, ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: Shield }] : [])].map(
+          (item) => {
             const Icon = item.icon;
             const active = location.pathname === item.to;
             return (
-              <Link key={item.to} to={item.to}>
-                <Button variant={active ? "secondary" : "ghost"} size="sm" className="gap-2">
-                  <Icon className="h-4 w-4" /> {item.label}
-                </Button>
+              <Link
+                key={item.to}
+                to={item.to}
+                className={cn(
+                  "flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors",
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                {item.label}
               </Link>
             );
-          })}
-          {isAdmin && (
-            <Link to="/admin">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <Shield className="h-4 w-4" /> Admin
-              </Button>
-            </Link>
-          )}
-        </nav>
-      </header>
+          }
+        )}
+      </nav>
 
-      <main className={cn("flex-1 w-full")}>{children}</main>
       <ConsentPrompt />
     </div>
   );

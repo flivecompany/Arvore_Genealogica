@@ -117,15 +117,48 @@ export default function People() {
         </div>
       </Card>
 
-      {/* Grade */}
-      <Card className="overflow-x-auto">
+      {/* Cartões (mobile) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:hidden">
+        {filtered.map((p) => (
+          <Card
+            key={p.id}
+            className="p-3 flex items-center gap-3 cursor-pointer active:bg-secondary/60"
+            onClick={() => { setSelected(p); setOpen(true); }}
+          >
+            <PersonAvatar person={p} className="h-11 w-11 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="font-medium truncate">{fullName(p)}</div>
+              <div className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                <SexIcon sex={p.sex} className="h-3.5 w-3.5 shrink-0" />
+                {formatDate(p.birth_date, p.birth_date_text) || sexLabel(p.sex)}
+                {p.birth_place ? ` · ${p.birth_place}` : ""}
+              </div>
+            </div>
+            {p.is_living ? (
+              <Badge variant="secondary" className="shrink-0">Vivo(a)</Badge>
+            ) : (
+              <Badge variant="outline" className="shrink-0">
+                Falecido(a){p.death_date ? ` · ${new Date(p.death_date).getFullYear()}` : ""}
+              </Badge>
+            )}
+          </Card>
+        ))}
+        {filtered.length === 0 && (
+          <p className="text-center text-muted-foreground py-10 col-span-full">
+            Nenhuma pessoa encontrada com esses filtros.
+          </p>
+        )}
+      </div>
+
+      {/* Tabela (desktop) */}
+      <Card className="overflow-x-auto hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
-              <TableHead>Sexo</TableHead>
-              <TableHead>Nascimento</TableHead>
-              <TableHead>Local</TableHead>
+              <TableHead className="hidden sm:table-cell">Sexo</TableHead>
+              <TableHead className="hidden md:table-cell">Nascimento</TableHead>
+              <TableHead className="hidden lg:table-cell">Local</TableHead>
               <TableHead>Situação</TableHead>
             </TableRow>
           </TableHeader>
@@ -142,15 +175,15 @@ export default function People() {
                     <span className="font-medium">{fullName(p)}</span>
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden sm:table-cell">
                   <span className="flex items-center gap-1 text-sm">
                     <SexIcon sex={p.sex} className="h-3.5 w-3.5" /> {sexLabel(p.sex)}
                   </span>
                 </TableCell>
-                <TableCell className="whitespace-nowrap text-sm">
+                <TableCell className="hidden md:table-cell whitespace-nowrap text-sm">
                   {formatDate(p.birth_date, p.birth_date_text) || "—"}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
                   {p.birth_place || "—"}
                 </TableCell>
                 <TableCell>
