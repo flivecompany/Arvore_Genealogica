@@ -280,8 +280,9 @@ export default function NetworkView({
         })}
           </g>
         </svg>
+      </div>
 
-        <div className="absolute bottom-3 right-3 flex flex-col items-stretch gap-1">
+      <div className="absolute bottom-3 right-3 z-30 flex flex-col items-stretch gap-1">
           <button
             className="h-8 w-8 grid place-items-center rounded-md border border-primary bg-primary text-primary-foreground shadow hover:bg-primary/90"
             onClick={() => centerZoom(1.3)}
@@ -333,7 +334,6 @@ export default function NetworkView({
             )}
           </button>
         </div>
-      </div>
     </div>
   );
 }
