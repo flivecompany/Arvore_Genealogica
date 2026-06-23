@@ -161,7 +161,7 @@ export default function FamilyTree({
       {people.length > 0 && (
         <div className="absolute bottom-3 right-3 z-20 flex flex-col gap-1">
           <button
-            className="h-9 w-9 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
+            className="h-9 w-9 grid place-items-center rounded-md border border-primary bg-primary text-primary-foreground shadow hover:bg-primary/90"
             onClick={() => zoomStep(true)}
             aria-label="Aproximar"
             title="Aproximar"
@@ -169,7 +169,7 @@ export default function FamilyTree({
             <ZoomIn className="h-4 w-4" />
           </button>
           <button
-            className="h-9 w-9 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
+            className="h-9 w-9 grid place-items-center rounded-md border border-primary bg-primary text-primary-foreground shadow hover:bg-primary/90"
             onClick={() => zoomStep(false)}
             aria-label="Afastar"
             title="Afastar"
@@ -177,7 +177,7 @@ export default function FamilyTree({
             <ZoomOut className="h-4 w-4" />
           </button>
           <button
-            className="h-9 w-9 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
+            className="h-9 w-9 grid place-items-center rounded-md border border-primary bg-primary text-primary-foreground shadow hover:bg-primary/90"
             onClick={fitScreen}
             aria-label="Ajustar à tela"
             title="Ajustar à tela"
