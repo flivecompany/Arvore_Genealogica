@@ -14,6 +14,7 @@ import TreeView from "./pages/TreeView";
 import People from "./pages/People";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
+import SuperAdmin from "./pages/SuperAdmin";
 import Ajuda from "./pages/Ajuda";
 import Shared from "./pages/Shared";
 import Convite from "./pages/Convite";
@@ -58,6 +59,7 @@ const App = () => (
                 <Route path="/pessoas" element={<People />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/superadmin" element={<SuperAdmin />} />
                 <Route path="/ajuda" element={<Ajuda />} />
               </Route>
               <Route path="*" element={<NotFound />} />
