@@ -126,7 +126,7 @@ export default function TreeView() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)]">
       {/* Toolbar */}
       <div className="border-b border-border bg-background/60 backdrop-blur px-3 sm:px-4 py-2 flex flex-wrap items-center gap-2">
         <div className="relative w-full sm:w-auto order-1">

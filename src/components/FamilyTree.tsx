@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ZoomIn, ZoomOut, Maximize } from "lucide-react";
 import f3 from "family-chart";
 import "family-chart/styles/family-chart.css";
 import type { Person, Union } from "@/integrations/supabase/types";
@@ -129,5 +130,62 @@ export default function FamilyTree({
     });
   }, [highlight, people]);
 
-  return <div ref={containerRef} className={`f3 ${className ?? ""}`} />;
+  // Zoom por botão: dispara um evento de roda no centro do SVG, reaproveitando
+  // o comportamento de zoom (d3) que o family-chart já controla.
+  function zoomStep(zoomIn: boolean) {
+    const svg = containerRef.current?.querySelector("svg");
+    if (!svg) return;
+    const r = svg.getBoundingClientRect();
+    svg.dispatchEvent(
+      new WheelEvent("wheel", {
+        deltaY: zoomIn ? -260 : 260,
+        clientX: r.left + r.width / 2,
+        clientY: r.top + r.height / 2,
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+  }
+
+  function fitScreen() {
+    try {
+      chartRef.current?.updateTree({ initial: true });
+    } catch {
+      /* noop */
+    }
+  }
+
+  return (
+    <div className={`relative ${className ?? ""}`}>
+      <div ref={containerRef} className="f3 w-full h-full" />
+      {people.length > 0 && (
+        <div className="absolute bottom-3 right-3 z-20 flex flex-col gap-1">
+          <button
+            className="h-9 w-9 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
+            onClick={() => zoomStep(true)}
+            aria-label="Aproximar"
+            title="Aproximar"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </button>
+          <button
+            className="h-9 w-9 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
+            onClick={() => zoomStep(false)}
+            aria-label="Afastar"
+            title="Afastar"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </button>
+          <button
+            className="h-9 w-9 grid place-items-center rounded-md border border-border bg-background/90 shadow hover:bg-secondary"
+            onClick={fitScreen}
+            aria-label="Ajustar à tela"
+            title="Ajustar à tela"
+          >
+            <Maximize className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
