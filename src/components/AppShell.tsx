@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Plus,
   HelpCircle,
+  User,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
@@ -108,8 +109,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="max-w-[160px]">
-                  <span className="truncate">{user?.email}</span>
+                <Button variant="ghost" size="sm" className="max-w-[160px] px-2">
+                  <User className="h-4 w-4 sm:hidden" />
+                  <span className="hidden sm:inline truncate">{user?.email}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

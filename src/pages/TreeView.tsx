@@ -11,6 +11,7 @@ import {
   TreePine,
   Network,
   LayoutGrid,
+  MoreVertical,
 } from "lucide-react";
 const FamilyTree = lazy(() => import("@/components/FamilyTree"));
 const NetworkView = lazy(() => import("@/components/NetworkView"));
@@ -19,6 +20,12 @@ import { PersonForm } from "@/components/PersonForm";
 import { ShareDialog } from "@/components/ShareDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -121,14 +128,14 @@ export default function TreeView() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Toolbar */}
-      <div className="border-b border-border bg-background/60 backdrop-blur px-4 py-2 flex flex-wrap items-center gap-2">
-        <div className="relative">
+      <div className="border-b border-border bg-background/60 backdrop-blur px-3 sm:px-4 py-2 flex flex-wrap items-center gap-2">
+        <div className="relative w-full sm:w-auto order-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar pessoa..."
-            className="pl-8 w-56"
+            className="pl-8 w-full sm:w-56"
           />
           {matches.length > 0 && (
             <div className="absolute z-30 mt-1 w-full rounded-md border border-border bg-popover shadow-lg">
@@ -174,7 +181,7 @@ export default function TreeView() {
                 value={focusId ?? groups[0]?.rootId}
                 onValueChange={(v) => { setFocusId(v); setHlMode("none"); }}
               >
-                <SelectTrigger className="h-9 w-[210px] text-xs">
+                <SelectTrigger className="h-9 w-full sm:w-[210px] text-xs">
                   <SelectValue placeholder="Grupo familiar" />
                 </SelectTrigger>
                 <SelectContent>
@@ -191,17 +198,21 @@ export default function TreeView() {
               variant={hlMode === "ancestors" ? "secondary" : "ghost"}
               size="sm"
               disabled={!focusId}
+              title="Ancestrais"
               onClick={() => setHlMode((m) => (m === "ancestors" ? "none" : "ancestors"))}
             >
-              <ArrowUpFromLine className="h-4 w-4 mr-1" /> Ancestrais
+              <ArrowUpFromLine className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Ancestrais</span>
             </Button>
             <Button
               variant={hlMode === "descendants" ? "secondary" : "ghost"}
               size="sm"
               disabled={!focusId}
+              title="Descendentes"
               onClick={() => setHlMode((m) => (m === "descendants" ? "none" : "descendants"))}
             >
-              <ArrowDownToLine className="h-4 w-4 mr-1" /> Descendentes
+              <ArrowDownToLine className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Descendentes</span>
             </Button>
             {(focusId || hlMode !== "none") && (
               <Button variant="ghost" size="sm" onClick={() => { setFocusId(null); setHlMode("none"); }}>
@@ -213,23 +224,53 @@ export default function TreeView() {
         )}
 
         <div className="ml-auto flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={() => doExport("png")}>
-            <ImageIcon className="h-4 w-4 mr-1" /> PNG
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => doExport("pdf")}>
-            <Download className="h-4 w-4 mr-1" /> PDF
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => downloadGedcom(people, unions, activeTree.name)}>
-            GEDCOM
-          </Button>
-          {isAdmin && (
-            <Button variant="ghost" size="sm" onClick={() => setSharing(true)}>
-              <Share2 className="h-4 w-4 mr-1" /> Compartilhar
+          {/* Ações de exportar/compartilhar: inline no desktop */}
+          <div className="hidden md:flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={() => doExport("png")}>
+              <ImageIcon className="h-4 w-4 mr-1" /> PNG
             </Button>
-          )}
+            <Button variant="ghost" size="sm" onClick={() => doExport("pdf")}>
+              <Download className="h-4 w-4 mr-1" /> PDF
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => downloadGedcom(people, unions, activeTree.name)}>
+              GEDCOM
+            </Button>
+            {isAdmin && (
+              <Button variant="ghost" size="sm" onClick={() => setSharing(true)}>
+                <Share2 className="h-4 w-4 mr-1" /> Compartilhar
+              </Button>
+            )}
+          </div>
+
+          {/* …e agrupadas num menu no mobile */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden" aria-label="Mais ações">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => doExport("png")}>
+                <ImageIcon className="h-4 w-4 mr-2" /> Exportar PNG
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => doExport("pdf")}>
+                <Download className="h-4 w-4 mr-2" /> Exportar PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => downloadGedcom(people, unions, activeTree.name)}>
+                <Download className="h-4 w-4 mr-2" /> Exportar GEDCOM
+              </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem onClick={() => setSharing(true)}>
+                  <Share2 className="h-4 w-4 mr-2" /> Compartilhar
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {canEdit && (
             <Button size="sm" onClick={() => setCreating(true)}>
-              <UserPlus className="h-4 w-4 mr-1" /> Pessoa
+              <UserPlus className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Pessoa</span>
             </Button>
           )}
         </div>

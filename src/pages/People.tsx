@@ -123,9 +123,9 @@ export default function People() {
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
-              <TableHead>Sexo</TableHead>
-              <TableHead>Nascimento</TableHead>
-              <TableHead>Local</TableHead>
+              <TableHead className="hidden sm:table-cell">Sexo</TableHead>
+              <TableHead className="hidden md:table-cell">Nascimento</TableHead>
+              <TableHead className="hidden lg:table-cell">Local</TableHead>
               <TableHead>Situação</TableHead>
             </TableRow>
           </TableHeader>
@@ -142,15 +142,15 @@ export default function People() {
                     <span className="font-medium">{fullName(p)}</span>
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden sm:table-cell">
                   <span className="flex items-center gap-1 text-sm">
                     <SexIcon sex={p.sex} className="h-3.5 w-3.5" /> {sexLabel(p.sex)}
                   </span>
                 </TableCell>
-                <TableCell className="whitespace-nowrap text-sm">
+                <TableCell className="hidden md:table-cell whitespace-nowrap text-sm">
                   {formatDate(p.birth_date, p.birth_date_text) || "—"}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
                   {p.birth_place || "—"}
                 </TableCell>
                 <TableCell>
