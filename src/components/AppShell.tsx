@@ -1,20 +1,24 @@
 import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   Network,
   Users,
   LayoutDashboard,
   Shield,
+  ShieldCheck,
   LogOut,
   ChevronDown,
   Plus,
   HelpCircle,
   User,
+  Megaphone,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { NotificationBell } from "./NotificationBell";
 import { ConsentPrompt } from "./ConsentPrompt";
+import { isSuperadmin, getPublicSettings } from "@/lib/superadmin";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,6 +44,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { trees, activeTree, setActiveTree, isAdmin, createNewTree } = useTree();
   const location = useLocation();
   const navigate = useNavigate();
+  const { data: isSuper } = useQuery({ queryKey: ["superadmin"], queryFn: isSuperadmin });
+  const { data: publicSettings } = useQuery({
+    queryKey: ["public-settings"],
+    queryFn: getPublicSettings,
+  });
+  const announcement = publicSettings?.announcement;
 
   const handleNewTree = async () => {
     const name = window.prompt("Nome da nova árvore (ex.: Família Silva):");
@@ -102,6 +112,17 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Button>
               </Link>
             )}
+            {isSuper && (
+              <Link to="/superadmin">
+                <Button
+                  variant={location.pathname === "/superadmin" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <ShieldCheck className="h-4 w-4" /> Superadmin
+                </Button>
+              </Link>
+            )}
           </nav>
 
           <div className="ml-auto md:ml-2 flex items-center gap-1">
@@ -119,6 +140,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {user?.email}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {isSuper && (
+                  <DropdownMenuItem onClick={() => navigate("/superadmin")}>
+                    <ShieldCheck className="mr-2 h-4 w-4" /> Superadministração
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => signOut()}>
                   <LogOut className="mr-2 h-4 w-4" /> Sair
                 </DropdownMenuItem>
@@ -127,6 +153,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
+
+      {announcement && (
+        <div className="bg-primary/10 border-b border-primary/20 text-sm text-foreground px-4 py-2 flex items-start gap-2">
+          <Megaphone className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+          <span className="flex-1">{announcement}</span>
+        </div>
+      )}
 
       <main className={cn("flex-1 w-full pb-16 md:pb-0")}>{children}</main>
 

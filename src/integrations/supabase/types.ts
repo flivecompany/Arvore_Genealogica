@@ -162,6 +162,32 @@ export interface PendingConsent {
   person_name: string;
 }
 
+export interface PlatformSettings {
+  id: boolean;
+  platform_name: string;
+  support_email: string | null;
+  announcement: string | null;
+  allow_signups: boolean;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+export interface PlatformStats {
+  trees: number;
+  people: number;
+  unions: number;
+  users: number;
+  media: number;
+  pending: number;
+  share_links: number;
+}
+
+export interface Superadmin {
+  email: string;
+  user_id: string | null;
+  created_at: string;
+}
+
 export interface TreeStats {
   people: number;
   living: number;
