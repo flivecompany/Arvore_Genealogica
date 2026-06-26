@@ -43,7 +43,8 @@ export function ShareDialog({ treeId, open, onOpenChange }: Props) {
   }, [open, treeId]);
 
   const shareUrl = (t: string) => `${window.location.origin}/compartilhar/${t}`;
-  const inviteUrl = (t: string) => `${window.location.origin}/convite/${t}`;
+  // Domínio canônico de produção para o convite ficar sempre no formato final.
+  const inviteUrl = (t: string) => `https://genealogia.flivecompany.com/convite/${t}`;
 
   async function copy(url: string) {
     await navigator.clipboard.writeText(url);
@@ -76,7 +77,8 @@ export function ShareDialog({ treeId, open, onOpenChange }: Props) {
           </DialogTitle>
           <DialogDescription>
             Escolha entre um link de <strong>visualização</strong> (somente
-            leitura) ou um <strong>convite para edição</strong> com aprovação.
+            leitura, com pedido de edição moderado) ou um{" "}
+            <strong>convite de edição</strong> que libera a edição na hora.
           </DialogDescription>
         </DialogHeader>
 
@@ -86,14 +88,16 @@ export function ShareDialog({ treeId, open, onOpenChange }: Props) {
               <Eye className="h-4 w-4 mr-2" /> Somente leitura
             </TabsTrigger>
             <TabsTrigger value="edit" className="flex-1">
-              <Pencil className="h-4 w-4 mr-2" /> Edição (aprovação)
+              <Pencil className="h-4 w-4 mr-2" /> Edição (direto)
             </TabsTrigger>
           </TabsList>
 
           {/* Somente leitura */}
           <TabsContent value="view" className="space-y-3 pt-2">
             <p className="text-xs text-muted-foreground">
-              Qualquer pessoa com o link visualiza a árvore (sem editar e sem login).
+              Qualquer pessoa com o link <strong>visualiza</strong> a árvore (sem
+              login). Quem quiser editar pode <strong>solicitar acesso</strong>, e
+              você aprova em <strong>Admin → Membros</strong>.
             </p>
             <Button onClick={() => gen("share")} disabled={busy} className="w-full">
               <Plus className="h-4 w-4 mr-2" /> Gerar link de visualização
@@ -105,12 +109,12 @@ export function ShareDialog({ treeId, open, onOpenChange }: Props) {
             />
           </TabsContent>
 
-          {/* Edição com aprovação */}
+          {/* Edição direta (sem aprovação) */}
           <TabsContent value="edit" className="space-y-3 pt-2">
             <p className="text-xs text-muted-foreground">
-              Quem abrir o convite faz login e <strong>solicita acesso</strong>. Você
-              aprova uma vez no painel <strong>Admin → Membros</strong>; depois a
-              pessoa edita a árvore livremente.
+              Quem abrir o convite faz login e <strong>já edita na hora</strong>,
+              sem precisar de aprovação. Compartilhe apenas com pessoas de
+              confiança.
             </p>
             <Button onClick={() => gen("invite")} disabled={busy} className="w-full">
               <Plus className="h-4 w-4 mr-2" /> Gerar convite de edição
