@@ -16,17 +16,18 @@ import { SuggestionForm } from "./SuggestionForm";
 export function FeedbackButton() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
-  // Na árvore (/arvore) o canto inferior direito tem os controles de zoom e o
-  // esquerdo tem o FAB "Adicionar pessoa"; ali o botão sobe para a esquerda,
-  // acima do FAB. Nas demais telas fica no canto inferior direito.
-  const onTree = pathname === "/arvore";
-  const posClass = onTree ? "left-5 bottom-20" : "right-4 bottom-20 md:bottom-6";
+  // A tela da árvore já tem o FAB "Adicionar pessoa" (canto inferior esquerdo) e
+  // os controles de zoom (canto inferior direito) — no mobile ainda há a barra
+  // de navegação inferior. Para não sobrepor nada, o botão flutuante não aparece
+  // aqui; nessa tela o acesso a Novidades/Sugestões fica no menu (ícone de perfil).
+  if (pathname === "/arvore") return null;
+
   return (
     <>
       <Button
         onClick={() => setOpen(true)}
         size="sm"
-        className={`fixed z-40 gap-2 rounded-full shadow-flive ${posClass}`}
+        className="fixed right-4 bottom-20 md:bottom-6 z-40 gap-2 rounded-full shadow-flive"
       >
         <Lightbulb className="h-4 w-4" /> Sugerir
       </Button>
