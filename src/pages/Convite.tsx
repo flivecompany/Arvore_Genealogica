@@ -44,6 +44,20 @@ export default function Convite() {
           </>
         )}
 
+        {!working && result?.status === "joined" && (
+          <>
+            <CheckCircle2 className="h-10 w-10 mx-auto text-success" />
+            <h1 className="text-xl font-bold">Acesso liberado!</h1>
+            <p className="text-muted-foreground">
+              Você agora pode editar{" "}
+              <strong>{result.tree_name ?? "a árvore"}</strong>. Bom trabalho!
+            </p>
+            <Button className="w-full" onClick={() => navigate("/arvore")}>
+              Abrir a árvore
+            </Button>
+          </>
+        )}
+
         {!working && result?.status === "pending" && (
           <>
             <Clock className="h-10 w-10 mx-auto text-warning" />

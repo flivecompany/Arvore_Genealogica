@@ -245,7 +245,7 @@ export async function revokeInviteLink(token: string): Promise<void> {
 }
 
 export interface JoinResult {
-  status: "pending" | "member" | "invalid" | "unauthenticated";
+  status: "joined" | "pending" | "member" | "invalid" | "unauthenticated";
   tree_id?: string;
   tree_name?: string;
   role?: MemberRole;
@@ -253,6 +253,13 @@ export interface JoinResult {
 
 export async function joinTree(token: string): Promise<JoinResult> {
   const { data, error } = await supabase.rpc("genea_join_tree", { p_token: token });
+  if (error) throw error;
+  return data as JoinResult;
+}
+
+/** Solicita acesso de edição a partir de um link somente-leitura (moderado). */
+export async function requestEditAccess(token: string): Promise<JoinResult> {
+  const { data, error } = await supabase.rpc("genea_request_edit", { p_token: token });
   if (error) throw error;
   return data as JoinResult;
 }
