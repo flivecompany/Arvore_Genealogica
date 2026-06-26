@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { TreeProvider } from "./hooks/useTree";
 import { AppShell } from "./components/AppShell";
+import { Seo } from "./components/Seo";
 import { recordAccess } from "./lib/superadmin";
 
 import Landing from "./pages/Landing";
@@ -45,6 +46,8 @@ function RequireAuth() {
   if (!user) return <Navigate to="/auth" replace />;
   return (
     <TreeProvider>
+      {/* Áreas privadas: nunca indexar */}
+      <Seo title="Painel · Árvore Genealógica Flive" noindex />
       <AppShell>
         <Outlet />
       </AppShell>

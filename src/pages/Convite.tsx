@@ -4,6 +4,7 @@ import { Loader2, Clock, CheckCircle2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Logo } from "@/components/Logo";
+import { Seo } from "@/components/Seo";
 import { useAuth } from "@/hooks/useAuth";
 import { joinTree, type JoinResult } from "@/lib/people";
 
@@ -34,6 +35,7 @@ export default function Convite() {
 
   return (
     <div className="min-h-screen grid place-items-center bg-gradient-subtle px-4">
+      <Seo title="Convite para editar árvore · Flive" noindex />
       <Card className="w-full max-w-md p-8 space-y-5 text-center shadow-flive">
         <Logo withText={false} />
 

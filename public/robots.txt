@@ -1,2 +1,15 @@
+# Árvore Genealógica Flive — regras de rastreamento
 User-agent: *
 Allow: /
+
+# Áreas privadas (atrás de login) e links com token: fora do índice
+Disallow: /arvore
+Disallow: /pessoas
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /superadmin
+Disallow: /ajuda
+Disallow: /compartilhar
+Disallow: /convite
+
+Sitemap: https://genealogia.flivecompany.com/sitemap.xml
