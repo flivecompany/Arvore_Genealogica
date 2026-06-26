@@ -5,7 +5,7 @@ export const SITE_NAME = "Árvore Genealógica Flive";
 const DEFAULT_TITLE = "Crie sua Árvore Genealógica Online Grátis | Flive";
 const DEFAULT_DESC =
   "Monte sua árvore genealógica online e de graça: cadastre a família, veja um organograma interativo com fotos e preserve a história. Crie sua conta grátis.";
-const DEFAULT_IMAGE = `${SITE_URL}/api/og`;
+const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`;
 
 interface SeoProps {
   /** Título da aba/SERP. Se omitido, usa o título padrão da marca. */
