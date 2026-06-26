@@ -210,6 +210,28 @@ export interface TreeStats {
   birth_decades: { decade: number; total: number }[];
 }
 
+export type FeatureStatus = "planned" | "in_progress" | "done";
+export interface FeatureUpdate {
+  id: string;
+  title: string;
+  description: string | null;
+  status: FeatureStatus;
+  published: boolean;
+  created_at: string;
+  created_by?: string | null;
+}
+
+export type SuggestionStatus = "new" | "planned" | "done" | "declined";
+export interface Suggestion {
+  id: string;
+  user_id: string;
+  email: string | null;
+  title: string;
+  description: string | null;
+  status: SuggestionStatus;
+  created_at: string;
+}
+
 // Tipagem mínima e prática para o supabase-js. As tabelas usam Row/Insert/Update
 // genéricos; as colunas reais são validadas nos services e nos tipos acima.
 type GenericTable<Row> = {
@@ -229,6 +251,8 @@ export interface Database {
       genea_media: GenericTable<Media>;
       genea_share_links: GenericTable<ShareLink>;
       genea_audit_log: GenericTable<AuditEntry>;
+      genea_feature_updates: GenericTable<FeatureUpdate>;
+      genea_suggestions: GenericTable<Suggestion>;
     };
     Views: Record<string, never>;
     Functions: {

@@ -19,6 +19,7 @@ import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import SuperAdmin from "./pages/SuperAdmin";
 import Ajuda from "./pages/Ajuda";
+import Novidades from "./pages/Novidades";
 import Shared from "./pages/Shared";
 import Convite from "./pages/Convite";
 import NotFound from "./pages/NotFound";
@@ -75,6 +76,7 @@ const App = () => (
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/superadmin" element={<SuperAdmin />} />
                 <Route path="/ajuda" element={<Ajuda />} />
+                <Route path="/novidades" element={<Novidades />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

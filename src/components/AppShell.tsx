@@ -13,10 +13,12 @@ import {
   HelpCircle,
   User,
   Megaphone,
+  Sparkles,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { NotificationBell } from "./NotificationBell";
+import { FeedbackButton } from "./FeedbackButton";
 import { ConsentPrompt } from "./ConsentPrompt";
 import { isSuperadmin, getPublicSettings } from "@/lib/superadmin";
 import { Button } from "@/components/ui/button";
@@ -101,6 +103,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Link>
               );
             })}
+            <Link to="/novidades">
+              <Button
+                variant={location.pathname === "/novidades" ? "secondary" : "ghost"}
+                size="sm"
+                className="gap-2"
+              >
+                <Sparkles className="h-4 w-4" /> Novidades
+              </Button>
+            </Link>
             {isAdmin && (
               <Link to="/admin">
                 <Button
@@ -140,6 +151,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {user?.email}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/novidades")}>
+                  <Sparkles className="mr-2 h-4 w-4" /> Novidades
+                </DropdownMenuItem>
                 {isSuper && (
                   <DropdownMenuItem onClick={() => navigate("/superadmin")}>
                     <ShieldCheck className="mr-2 h-4 w-4" /> Superadministração
@@ -186,6 +200,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       </nav>
 
+      <FeedbackButton />
       <ConsentPrompt />
     </div>
   );

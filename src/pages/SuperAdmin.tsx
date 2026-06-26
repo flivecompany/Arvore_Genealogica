@@ -16,6 +16,8 @@ import {
   Activity,
   CalendarDays,
   UserCheck,
+  Sparkles,
+  MessageSquare,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +26,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
   isSuperadmin,
@@ -34,11 +43,25 @@ import {
   setSuperadmin,
   getAccessStats,
 } from "@/lib/superadmin";
+import {
+  listFeatureUpdates,
+  createFeatureUpdate,
+  updateFeatureUpdate,
+  deleteFeatureUpdate,
+  listSuggestions,
+  updateSuggestionStatus,
+  FEATURE_STATUS_LABEL,
+  SUGGESTION_STATUS_LABEL,
+} from "@/lib/feedback";
 import type {
   PlatformSettings,
   PlatformStats,
   Superadmin,
   AccessStats,
+  FeatureUpdate,
+  FeatureStatus,
+  Suggestion,
+  SuggestionStatus,
 } from "@/integrations/supabase/types";
 
 export default function SuperAdmin() {
@@ -329,7 +352,226 @@ export default function SuperAdmin() {
           </div>
         </Card>
       </section>
+
+      {/* Novidades (gerenciar a lista de novos recursos) */}
+      <NovidadesAdmin />
+
+      {/* Sugestões dos usuários (triagem) */}
+      <SuggestionsAdmin />
     </div>
+  );
+}
+
+/** Gerência das novidades / novos recursos (somente superadmin). */
+function NovidadesAdmin() {
+  const { toast } = useToast();
+  const [items, setItems] = useState<FeatureUpdate[]>([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [status, setStatus] = useState<FeatureStatus>("planned");
+  const [adding, setAdding] = useState(false);
+
+  function reload() {
+    listFeatureUpdates().then(setItems).catch(() => {});
+  }
+  useEffect(reload, []);
+
+  async function add() {
+    if (!title.trim()) return;
+    setAdding(true);
+    try {
+      await createFeatureUpdate({ title, description, status });
+      setTitle("");
+      setDescription("");
+      setStatus("planned");
+      reload();
+      toast({ title: "Novidade publicada." });
+    } catch (e) {
+      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  async function patch(id: string, p: Partial<FeatureUpdate>) {
+    try {
+      await updateFeatureUpdate(id, p);
+      reload();
+    } catch (e) {
+      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
+    }
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Remover esta novidade?")) return;
+    try {
+      await deleteFeatureUpdate(id);
+      reload();
+    } catch (e) {
+      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
+    }
+  }
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1">
+        <Sparkles className="h-4 w-4" /> Novidades / novos recursos
+      </h2>
+
+      {/* Adicionar */}
+      <Card className="p-4 space-y-3">
+        <div className="space-y-1">
+          <Label>Título</Label>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ex.: Exportação em GEDCOM"
+            maxLength={120}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label>Descrição (opcional)</Label>
+          <Textarea
+            rows={2}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="O que mudou ou está por vir."
+          />
+        </div>
+        <div className="flex items-end gap-2">
+          <div className="space-y-1">
+            <Label>Status</Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as FeatureStatus)}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(FEATURE_STATUS_LABEL) as FeatureStatus[]).map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {FEATURE_STATUS_LABEL[k]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={add} disabled={adding || !title.trim()} className="ml-auto">
+            {adding ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
+            Publicar
+          </Button>
+        </div>
+      </Card>
+
+      {/* Lista */}
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhuma novidade cadastrada.</p>
+      ) : (
+        items.map((it) => (
+          <Card key={it.id} className="p-4 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="font-medium">{it.title}</div>
+                {it.description && (
+                  <div className="text-sm text-muted-foreground whitespace-pre-line">
+                    {it.description}
+                  </div>
+                )}
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-destructive shrink-0"
+                onClick={() => remove(it.id)}
+                aria-label="Remover novidade"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Select value={it.status} onValueChange={(v) => patch(it.id, { status: v as FeatureStatus })}>
+                <SelectTrigger className="w-48 h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(FEATURE_STATUS_LABEL) as FeatureStatus[]).map((k) => (
+                    <SelectItem key={k} value={k}>
+                      {FEATURE_STATUS_LABEL[k]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <label className="flex items-center gap-2 text-sm">
+                <Switch
+                  checked={it.published}
+                  onCheckedChange={(v) => patch(it.id, { published: v })}
+                />
+                Publicada
+              </label>
+            </div>
+          </Card>
+        ))
+      )}
+    </section>
+  );
+}
+
+/** Triagem das sugestões enviadas pelos usuários (somente superadmin). */
+function SuggestionsAdmin() {
+  const { toast } = useToast();
+  const [items, setItems] = useState<Suggestion[]>([]);
+
+  function reload() {
+    listSuggestions().then(setItems).catch(() => {});
+  }
+  useEffect(reload, []);
+
+  async function setStatus(id: string, status: SuggestionStatus) {
+    try {
+      await updateSuggestionStatus(id, status);
+      reload();
+    } catch (e) {
+      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
+    }
+  }
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1">
+        <MessageSquare className="h-4 w-4" /> Sugestões dos usuários ({items.length})
+      </h2>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhuma sugestão recebida ainda.</p>
+      ) : (
+        items.map((s) => (
+          <Card key={s.id} className="p-4 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="font-medium">{s.title}</div>
+                {s.description && (
+                  <div className="text-sm text-muted-foreground whitespace-pre-line">
+                    {s.description}
+                  </div>
+                )}
+                <div className="text-xs text-muted-foreground mt-1">
+                  {s.email ?? "—"} · {new Date(s.created_at).toLocaleDateString("pt-BR")}
+                </div>
+              </div>
+              <Select value={s.status} onValueChange={(v) => setStatus(s.id, v as SuggestionStatus)}>
+                <SelectTrigger className="w-40 h-8 shrink-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(SUGGESTION_STATUS_LABEL) as SuggestionStatus[]).map((k) => (
+                    <SelectItem key={k} value={k}>
+                      {SUGGESTION_STATUS_LABEL[k]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </Card>
+        ))
+      )}
+    </section>
   );
 }
 
