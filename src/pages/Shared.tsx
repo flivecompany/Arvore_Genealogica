@@ -4,6 +4,7 @@ import { Loader2, Lock, Download, Pencil } from "lucide-react";
 const FamilyTree = lazy(() => import("@/components/FamilyTree"));
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
+import { Seo } from "@/components/Seo";
 import { fetchSharedTree, requestEditAccess } from "@/lib/people";
 import { exportPdf } from "@/lib/exporters";
 import { useAuth } from "@/hooks/useAuth";
@@ -78,6 +79,7 @@ export default function Shared() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-subtle">
+      <Seo title={`${tree?.name ?? "Árvore"} · Visualização compartilhada`} noindex />
       <header className="border-b border-border bg-background/80 backdrop-blur">
         <div className="container flex items-center justify-between py-3 px-4">
           <div className="flex items-center gap-3">

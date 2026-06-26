@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { Seo } from "@/components/Seo";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -65,15 +66,26 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen grid place-items-center bg-gradient-subtle px-4">
+      <Seo
+        title="Entrar ou criar conta grátis · Árvore Genealógica Flive"
+        description="Acesse a Árvore Genealógica Flive ou crie sua conta gratuita. O cadastro é grátis e leva menos de 1 minuto."
+        path="/auth"
+        noindex
+      />
       <Card className="w-full max-w-sm p-6 space-y-5 shadow-flive">
         <div className="flex flex-col items-center gap-2">
           <Logo withText={false} />
           <h1 className="text-xl font-bold">Árvore Genealógica</h1>
           <p className="text-sm text-muted-foreground text-center">
-            {mode === "signin" && "Entre para acessar suas árvores."}
-            {mode === "signup" && "Crie sua conta."}
+            {mode === "signin" && "Entre ou crie sua conta grátis para montar sua árvore."}
+            {mode === "signup" && "Crie sua conta grátis — leva menos de 1 minuto."}
             {mode === "forgot" && "Recupere o acesso à sua conta."}
           </p>
+          {mode === "signup" && (
+            <span className="inline-block rounded-full bg-success/10 text-success px-2.5 py-0.5 text-xs font-semibold">
+              Acesso gratuito
+            </span>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -109,8 +121,8 @@ export default function Auth() {
               </button>
               <div className="text-muted-foreground">
                 Não tem conta?{" "}
-                <button className="text-primary hover:underline" onClick={() => setMode("signup")}>
-                  Cadastre-se
+                <button className="text-primary hover:underline font-medium" onClick={() => setMode("signup")}>
+                  Cadastre-se grátis
                 </button>
               </div>
             </>
